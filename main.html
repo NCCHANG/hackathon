@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>IaMestiMMU</title>
+  <title>InMestiMMU</title>
   <style>
     :root{
       --bg:#0b0d13;          /* deep canvas */
@@ -104,7 +104,7 @@
 
     <header>
       <div class="bar">
-        <div class="brand">IaMestiMMU</div>
+        <div class="brand">InMestiMMU</div>
         <div class="spacer"></div>
         <div class="crumb" id="crumb">Home</div>
       </div>
@@ -212,8 +212,8 @@
       { code:'TSN2201', name:'Computer Networks (Foundation)', desc:'Core networking concepts for the supplementary exam: models, addressing, and protocols.', credits:3, level:'Year 1', topics:['OSI layers','IP addressing','Transport basics'] }
     ];
 
-    const LS_KEY = 'iamesti.mmu.subjects.v1';
-    const FAV_KEY = 'iamesti.mmu.favs.v1';
+    const LS_KEY = 'inmesti.mmu.subjects.v1';
+    const FAV_KEY = 'inmesti.mmu.favs.v1';
 
     const subjects = JSON.parse(localStorage.getItem(LS_KEY) || 'null') || seed;
     let favourites = new Set(JSON.parse(localStorage.getItem(FAV_KEY) || '[]'));
