@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>InMestiMMU</title>
+  <style>
+    :root{
+      --bg:#0b0d13;          /* deep canvas */
+      --panel:#111522;       /* cards */
+      --panel-2:#0e1320;     /* header bar */
+      --muted:#7f8da6;       /* secondary text */
+      --text:#e9eefb;        /* primary text */
+      --accent:#5cc8ff;      /* cyan accent */
+      --accent-2:#a3ffad;    /* green accent */
+      --danger:#ff6b6b;      /* red/fav */
+      --ring: 0 0 0 3px rgb(92 200 255 / .25);
+      --radius: 18px;
+      --shadow: 0 10px 30px rgb(0 0 0 / .35);
+    }
+
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
+      color:var(--text); background:radial-gradient(1200px 800px at 20% -10%, #1b2240 0%, #0b0d13 50%);
+      letter-spacing:.2px;
+    }
+
+    /* App frame with slim side gutters to mirror the sketch */
+    .app{display:grid; grid-template-columns: 56px 1fr 56px; min-height:100dvh}
+    .gutter{background:linear-gradient(180deg, #131a2e, #0c0f18); box-shadow: inset -1px 0 0 #0f1424, inset 1px 0 0 #0f1424}
+
+    header{
+      grid-column: 1 / -1; position:sticky; top:0; z-index:10;
+      background: linear-gradient(180deg, var(--panel-2), #0b0f1a 70%);
+      border-bottom: 1px solid #0f1430;
+    }
+
+    .bar{max-width:1100px; margin:0 auto; display:flex; align-items:center; gap:14px; padding:18px 24px}
+    .brand{font-weight:800; letter-spacing:1.5px; text-transform:uppercase; font-size:22px}
+    .spacer{flex:1}
+    .crumb{color:var(--muted); font-size:14px}
+
+    main{grid-column: 2; max-width:1100px; width:100%; margin:24px auto 80px; padding:0 8px}
+
+    /* Panels */
+    .panel{background:linear-gradient(180deg, #111522, #0e1320); border:1px solid #1a2040; border-radius:var(--radius); box-shadow:var(--shadow)}
+
+    /* HOME */
+    #home .cards{display:grid; grid-template-columns: repeat(auto-fit, minmax(220px,1fr)); gap:22px}
+    .card-btn{display:flex; align-items:center; justify-content:center; gap:10px; height:160px; cursor:pointer; text-decoration:none; color:var(--text); font-weight:700; font-size:20px; transition:transform .15s ease, box-shadow .15s ease, background .15s ease;}
+    .card-btn:hover{transform:translateY(-2px); box-shadow:0 14px 40px rgb(0 0 0 / .45)}
+    .card-btn svg{width:22px; height:22px}
+
+     /* BROWSE */
+    .search-wrap{display:flex; gap:10px; align-items:center; margin-bottom:14px}
+    .input{flex:1; background:#0c1222; color:var(--text); border:1px solid #1e284a; border-radius:14px; padding:14px 16px; font-size:16px; outline:none; transition:border .15s ease, box-shadow .15s ease}
+    .input:focus{border-color:var(--accent); box-shadow:var(--ring)}
+    .btn{appearance:none; border:none; border-radius:14px; padding:12px 16px; font-weight:700; letter-spacing:.3px; cursor:pointer; background:linear-gradient(180deg, #1b274b, #16213f); color:var(--text); box-shadow:var(--shadow); transition:transform .1s ease, box-shadow .15s ease, opacity .15s}
+    .btn:hover{transform:translateY(-1px)}
+    .btn:active{transform:translateY(0)}
+    .btn-accent{background:linear-gradient(180deg, #2b8dbe, #226c94)}
+
+    .list{display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:16px; margin-top:12px}
+    .item{padding:16px; border-radius:16px; border:1px solid #1a2040; background:linear-gradient(180deg, #12182a, #0f1526); display:flex; gap:12px; align-items:flex-start}
+    .item h4{margin:0 0 6px; font-size:16px}
+    .pill{display:inline-block; padding:4px 8px; border-radius:999px; font-size:12px; background:rgba(163,255,173,.08); border:1px solid rgba(163,255,173,.35); color:#c7ffcf}
+    .item .open{margin-left:auto}
+
+    .section-title{font-size:18px; letter-spacing:.5px; color:var(--muted); margin:14px 2px 8px}
+
+    /* SHARE */
+    form .row{display:grid; grid-template-columns: 1fr 1fr; gap:12px}
+    form label{font-size:13px; color:var(--muted)}
+    form input[type="text"], form textarea{width:100%; margin-top:6px; background:#0c1222; color:var(--text); border:1px solid #1e284a; border-radius:12px; padding:12px 14px; font-size:15px; outline:none}
+    form textarea{min-height:110px; resize:vertical}
+
+    .drop{margin-top:12px; border:2px dashed #28406f; border-radius:14px; padding:18px; text-align:center; color:var(--muted)}
+    .drop input{display:none}
+    .drop.active{border-color:var(--accent)}
+
+    .actions{display:flex; gap:10px; justify-content:flex-end; margin-top:14px}
+
+    /* DETAIL */
+    #detail .header{display:flex; align-items:center; gap:10px; padding:14px; border-bottom:1px solid #1a2040}
+    .back{display:inline-flex; align-items:center; gap:8px; padding:8px 12px; border-radius:12px; background:#10172b; border:1px solid #1b2442; cursor:pointer}
+
+    .detail-wrap{display:grid; grid-template-columns: 1fr 300px; gap:20px; padding:18px}
+    .meta{background:#0f1526; border:1px solid #1a2040; border-radius:16px; padding:12px}
+    .meta table{width:100%; border-collapse:collapse; font-size:14px}
+    .meta td{padding:8px 6px; border-bottom:1px solid #1a2040; color:var(--muted)}
+    .meta td:first-child{color:#a9b5d6}
+    .fav{margin-left:auto; display:inline-flex; align-items:center; gap:8px; padding:10px 12px; border-radius:12px; border:1px solid #1a2040; background:#10172b; cursor:pointer}
+
+    .hidden{display:none}
+    .p16{padding:16px}
+    .mb8{margin-bottom:8px}
+  </style>
+</head>
+<body>
+  <div class="app">
+    <div class="gutter"></div>
+
+    <header>
+      <div class="bar">
+        <div class="brand">InMestiMMU</div>
+        <div class="spacer"></div>
+        <div class="crumb" id="crumb">Home</div>
+      </div>
+    </header>
+
+    <main>
+      <!-- HOME -->
+      <section id="home" class="panel p16">
+        <div class="section-title">Welcome</div>
+        <div class="cards">
+          <a class="card-btn panel" onclick="go('browse')" aria-label="Go to Browse">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="7" height="7"/><rect x="14" y="4" width="7" height="7"/><rect x="14" y="13" width="7" height="7"/><rect x="3" y="13" width="7" height="7"/></svg>
+            Browse
+          </a>
+          <a class="card-btn panel" onclick="go('share')" aria-label="Go to Share">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+            Share
+          </a>
+        </div>
+      </section>
+
+      <!-- BROWSE -->
+      <section id="browse" class="panel p16 hidden" role="region" aria-label="Browse subjects">
+        <div class="search-wrap">
+          <input id="q" class="input" type="text" placeholder="Enter subject name / code…" onkeydown="if(event.key==='Enter'){ runSearch(); }" />
+          <button class="btn btn-accent" title="Search" onclick="runSearch()">➜</button>
+        </div>
+        <div class="section-title">You may be interested…</div>
+        <div id="results" class="list" aria-live="polite"></div>
+      </section>
+
+      <!-- SHARE -->
+      <section id="share" class="panel p16 hidden" role="region" aria-label="Share a subject">
+        <form id="shareForm" onsubmit="submitShare(event)">
+          <div class="row">
+            <div>
+              <label>Subject Code
+                <input type="text" id="code" required placeholder="e.g., CCP6224" />
+              </label>
+            </div>
+            <div>
+              <label>Subject Name
+                <input type="text" id="name" required placeholder="e.g., Object-Oriented Analysis & Design" />
+              </label>
+            </div>
+          </div>
+          <div class="row" style="margin-top:12px">
+            <div style="grid-column:1 / -1">
+              <label>Description / Why you recommend it?
+                <textarea id="desc" placeholder="Key topics, assessments, tips…"></textarea>
+              </label>
+            </div>
+          </div>
+
+          <div class="drop" id="drop">
+            <input id="upload" type="file" accept="image/*,application/pdf" />
+            Drag & drop a syllabus / image here, or <span style="text-decoration:underline; cursor:pointer" onclick="document.getElementById('upload').click()">browse</span>
+            <div id="fileName" style="margin-top:8px"></div>
+          </div>
+
+          <div class="actions">
+            <button type="button" class="btn" onclick="go('home')">Cancel</button>
+            <button type="submit" class="btn btn-accent">Share ➜</button>
+          </div>
+        </form>
+      </section>
+
+      <!-- DETAIL -->
+      <section id="detail" class="panel hidden" role="region" aria-label="Subject details">
+        <div class="header">
+          <button class="back" onclick="go('browse')">⟵ Back</button>
+          <h2 id="dTitle" class="mb8" style="margin:0"></h2>
+          <button id="favBtn" class="fav" onclick="toggleFav()" title="Save to favourites">❤ <span id="favText">Save</span></button>
+        </div>
+        <div class="detail-wrap">
+          <div>
+            <div class="p16">
+              <h3 style="margin-top:0">Overview</h3>
+              <p id="dDesc" style="line-height:1.6; color:var(--muted)"></p>
+              <h3>Topics</h3>
+              <ul id="dTopics" style="line-height:1.7; padding-left:18px"></ul>
+            </div>
+          </div>
+          <aside class="meta">
+            <table>
+              <tr><td>Code</td><td id="dCode"></td></tr>
+              <tr><td>Credits</td><td id="dCredits"></td></tr>
+              <tr><td>Level</td><td id="dLevel"></td></tr>
+              <tr><td>Favourited</td><td id="dFav"></td></tr>
+            </table>
+          </aside>
+        </div>
+      </section>
+    </main>
+
+    <div class="gutter"></div>
+  </div>
+
+  <script>
+    // --- Simple in-memory dataset (persisted to localStorage when you "Share") ---
+    const seed = [
+      { code:'CCP6224', name:'Object-Oriented Analysis & Design', desc:'Design and implement software with UML, patterns, and a modular architecture. Final project often includes a Java Swing app.', credits:3, level:'Year 2', topics:['UML (use case, class, sequence)','Design patterns','Java Swing','Group project','Individual Q&A'] },
+      { code:'CMA6314', name:'Computational Methods', desc:'Root-finding (Bisection, Secant, Newton), interpolation and numerical integration with practical labs.', credits:3, level:'Year 3', topics:['Bisection/Secant/Newton','Error analysis','MATLAB/FreeMat labs'] },
+      { code:'CSN6224', name:'Computer Networks', desc:'Design high-availability topologies and simulate with Packet Tracer; subnetting, routing and switching.', credits:3, level:'Year 2', topics:['OSI vs TCP/IP','Subnetting & VLANs','Routing protocols','Packet Tracer labs'] },
+      { code:'TSN2201', name:'Computer Networks (Foundation)', desc:'Core networking concepts for the supplementary exam: models, addressing, and protocols.', credits:3, level:'Year 1', topics:['OSI layers','IP addressing','Transport basics'] }
+    ];
+
+    const LS_KEY = 'iamesti.mmu.subjects.v1';
+    const FAV_KEY = 'iamesti.mmu.favs.v1';
+
+    const subjects = JSON.parse(localStorage.getItem(LS_KEY) || 'null') || seed;
+    let favourites = new Set(JSON.parse(localStorage.getItem(FAV_KEY) || '[]'));
+
+    // --- Navigation ---
+    const sections = ['home','browse','share','detail'];
+    function go(id){
+      sections.forEach(s=>document.getElementById(s).classList.add('hidden'));
+      document.getElementById(id).classList.remove('hidden');
+      document.getElementById('crumb').textContent = id.charAt(0).toUpperCase()+id.slice(1);
+      if(id==='browse'){ renderList(subjects.slice(0,6)); }
+    }
+
+    // --- Browse & Search ---
+    const resultsEl = document.getElementById('results');
+    function runSearch(){
+      const term = document.getElementById('q').value.trim().toLowerCase();
+      const out = !term ? subjects : subjects.filter(s=> s.name.toLowerCase().includes(term) || s.code.toLowerCase().includes(term));
+      renderList(out);
+    }
+
+    function renderList(list){
+      if(list.length===0){ resultsEl.innerHTML = '<div class="p16" style="color:var(--muted)">No results. Try a different name/code.</div>'; return; }
+      resultsEl.innerHTML = list.map(s=> `
+        <div class="item">
+          <div>
+            <div class="pill">${s.code}</div>
+            <h4>${s.name}</h4>
+            <div style="color:var(--muted); font-size:14px">${s.desc}</div>
+          </div>
+          <div class="open">
+            <button class="btn" onclick='openDetail(${JSON.stringify(s.code)})'>Open ➜</button>
+          </div>
+        </div>`).join('');
+    }
+
+    // --- Detail ---
+    let current = null;
+    function openDetail(code){
+      current = subjects.find(x=>x.code===code);
+      if(!current) return;
+      document.getElementById('dTitle').textContent = `${current.name}`;
+      document.getElementById('dDesc').textContent = current.desc;
+      document.getElementById('dCode').textContent = current.code;
+      document.getElementById('dCredits').textContent = current.credits+ ' credit hours';
+      document.getElementById('dLevel').textContent = current.level;
+      const ul = document.getElementById('dTopics'); ul.innerHTML = current.topics.map(t=>`<li>${t}</li>`).join('');
+      setFavUI();
+      go('detail');
+    }
+
+    function setFavUI(){
+      const isFav = favourites.has(current.code);
+      document.getElementById('dFav').textContent = isFav ? 'Yes' : 'No';
+      document.getElementById('favText').textContent = isFav ? 'Saved' : 'Save';
+      document.getElementById('favBtn').style.color = isFav ? 'var(--danger)' : 'var(--text)';
+    }
+
+    function toggleFav(){
+      if(!current) return;
+      if(favourites.has(current.code)) favourites.delete(current.code); else favourites.add(current.code);
+      localStorage.setItem(FAV_KEY, JSON.stringify([...favourites]));
+      setFavUI();
+    }
+
+    // --- Share ---
+    const drop = document.getElementById('drop');
+    const upload = document.getElementById('upload');
+    const fileName = document.getElementById('fileName');
+
+    ;['dragenter','dragover'].forEach(evt=> drop.addEventListener(evt, e=>{ e.preventDefault(); drop.classList.add('active'); }));
+    ;['dragleave','drop'].forEach(evt=> drop.addEventListener(evt, e=>{ e.preventDefault(); drop.classList.remove('active'); }));
+    drop.addEventListener('drop', e=>{ upload.files = e.dataTransfer.files; fileName.textContent = upload.files[0] ? 'Attached: '+upload.files[0].name : '' });
+    upload.addEventListener('change', ()=>{ fileName.textContent = upload.files[0] ? 'Attached: '+upload.files[0].name : '' });
+
+    function submitShare(e){
+      e.preventDefault();
+      const code = document.getElementById('code').value.trim().toUpperCase();
+      const name = document.getElementById('name').value.trim();
+      const desc = document.getElementById('desc').value.trim() || 'Shared by the community.';
+      if(!code || !name) return;
+      const exists = subjects.some(s=> s.code===code);
+      const entry = { code, name, desc, credits:3, level:'Shared', topics:['Syllabus pending'] };
+      if(exists){
+        // update existing
+        const idx = subjects.findIndex(s=> s.code===code);
+        subjects[idx] = { ...subjects[idx], name, desc };
+      } else {
+        subjects.unshift(entry);
+      }
+      localStorage.setItem(LS_KEY, JSON.stringify(subjects));
+      (e.target).reset(); fileName.textContent='';
+      go('browse'); runSearch();
+    }
+
+    // load default view
+    go('home');
+  </script>
+</body>
+</html>
