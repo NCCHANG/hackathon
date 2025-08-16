@@ -41,7 +41,7 @@
     .panel{background:linear-gradient(180deg, #111522, #0e1320); border:1px solid #1a2040; border-radius:var(--radius); box-shadow:var(--shadow)}
 
     /* LOGOUT */
-    #logout .cards{display:grid; grid-template-columns: repeat(auto-fit, minmax(220px,1fr)); gap:22px}
+    #home .cards{display:grid; grid-template-columns: repeat(auto-fit, minmax(220px,1fr)); gap:22px}
     .card-btn{display:flex; align-items:center; justify-content:center; gap:10px; height:160px; cursor:pointer; text-decoration:none; color:var(--text); font-weight:700; font-size:20px; transition:transform .15s ease, box-shadow .15s ease, background .15s ease;}
     .card-btn:hover{transform:translateY(-2px); box-shadow:0 14px 40px rgb(0 0 0 / .45)}
     .card-btn svg{width:22px; height:22px}
@@ -89,3 +89,16 @@
     .hidden{display:none}
     .p16{padding:16px}
     .mb8{margin-bottom:8px}
+
+  .logout {
+  margin-left: 15px;       /* small gap between crumb and logout */
+  cursor: pointer;         /* show it's clickable */
+  color: inherit;          /* same color as crumb */
+  font-weight: inherit;    /* same weight */
+  font-size: inherit;      /* same size */
+  transition: color 0.2s;
+}
+
+.logout:hover {
+  color: #ff4444;          /* optional: red hover effect for logout */
+}
