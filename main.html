@@ -14,13 +14,13 @@
       <div class="bar">
         <div class="brand">InMestiMMU</div>
         <div class="spacer"></div>
-        <div class="crumb" id="crumb">Home</div>
+        <div class="crumb" id="crumb">Logout</div>
       </div>
     </header>
 
     <main>
-      <!-- HOME -->
-      <section id="home" class="panel p16">
+      <!-- LOGOUT -->
+      <section id="logout" class="panel p16">
         <div class="section-title">Welcome</div>
         <div class="cards">
           <a class="card-btn panel" onclick="go('browse')" aria-label="Go to Browse">
@@ -74,7 +74,7 @@
           </div>
 
           <div class="actions">
-            <button type="button" class="btn" onclick="go('home')">Cancel</button>
+            <button type="button" class="btn" onclick="go('logout')">Cancel</button>
             <button type="submit" class="btn btn-accent">Share ➜</button>
           </div>
         </form>
@@ -127,7 +127,7 @@
     let favourites = new Set(JSON.parse(localStorage.getItem(FAV_KEY) || '[]'));
 
     // --- Navigation ---
-    const sections = ['home','browse','share','detail'];
+    const sections = ['logout','browse','share','detail'];
     function go(id){
       sections.forEach(s=>document.getElementById(s).classList.add('hidden'));
       document.getElementById(id).classList.remove('hidden');
@@ -218,7 +218,7 @@
     }
 
     // load default view
-    go('home');
+    go('logout');
   </script>
 </body>
 </html>
