@@ -98,6 +98,21 @@
                 </button>
             </div>
 
+            <!-- AI-Powered Data Entry Section -->
+            <div class="bg-blue-50 p-6 rounded-xl shadow-inner border border-blue-200">
+                <h2 class="text-xl font-bold text-blue-800 mb-4">AI-Powered Data Entry</h2>
+                <p class="text-sm text-blue-700 mb-4">
+                    Paste text from your transcript below and the AI will automatically parse your course grades.
+                </p>
+                <textarea id="transcript-text" rows="5" placeholder="Paste your transcript text here... (e.g., 'Principles of Chemistry: CHE101 - 4 Credits - B+')" class="w-full p-3 border border-blue-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 transition duration-150"></textarea>
+                <div class="flex justify-center mt-4">
+                    <button id="parse-transcript-btn" class="flex items-center justify-center py-3 px-6 bg-blue-600 text-white font-bold rounded-lg shadow-md hover:bg-blue-700 transition duration-150 transform hover:scale-105">
+                        <span id="parse-text">Parse & Fill Courses</span>
+                        <div id="parse-spinner" class="loading-spinner ml-2 hidden"></div>
+                    </button>
+                </div>
+            </div>
+
             <!-- Current Semester Courses Section -->
             <div class="bg-white p-6 rounded-xl shadow-lg border border-gray-200">
                 <h2 class="text-xl font-bold text-gray-800 mb-4">Current Semester Courses</h2>
@@ -267,6 +282,10 @@
         const calculatorUi = document.getElementById('calculator-ui');
         const userInfoSpan = document.getElementById('user-info');
         const logoutBtn = document.getElementById('logout-btn');
+        const parseTranscriptBtn = document.getElementById('parse-transcript-btn');
+        const transcriptText = document.getElementById('transcript-text');
+        const parseSpinner = document.getElementById('parse-spinner');
+        const parseText = document.getElementById('parse-text');
 
         // Mapping of letter grades to grade points
         const gradePoints = {
@@ -324,6 +343,7 @@
             pastSemestersContainer.innerHTML = '';
             coursesContainer.innerHTML = '';
             targetCgpaInput.value = '';
+            transcriptText.value = '';
             resultsSection.classList.add('hidden');
             projectionsSection.classList.add('hidden');
             whatIfResults.classList.add('hidden');
@@ -444,6 +464,7 @@
             targetCgpaInput.value = '';
             pastSemestersContainer.innerHTML = '';
             coursesContainer.innerHTML = '';
+            transcriptText.value = '';
             resultsSection.classList.add('hidden');
             projectionsSection.classList.add('hidden');
             whatIfResults.classList.add('hidden');
@@ -563,6 +584,110 @@
         
         // Event listener for the clear button
         clearBtn.addEventListener('click', clearAllInputs);
+
+        // Event listener for the "Parse" button
+        parseTranscriptBtn.addEventListener('click', async () => {
+            const text = transcriptText.value.trim();
+            if (text === '') {
+                showMessage("Input Required", "Please paste your transcript text into the box first.");
+                return;
+            }
+
+            // Show loading state
+            parseTranscriptBtn.disabled = true;
+            parseSpinner.classList.remove('hidden');
+            parseText.textContent = 'Parsing...';
+            
+            try {
+                const prompt = `You are a helpful assistant that extracts academic course information from raw text. The user will provide text from a university transcript or similar document. Your task is to identify and extract each course's name, credit hours, and letter grade.
+
+                Please provide the extracted data as a JSON array of objects. If you cannot find a piece of information for a course, use a null value.
+
+                Here is an example of the desired format:
+                [
+                    {
+                        "name": "Introduction to Computer Science",
+                        "credits": 3,
+                        "grade": "A"
+                    },
+                    {
+                        "name": "Calculus I",
+                        "credits": 4,
+                        "grade": "B+"
+                    }
+                ]
+
+                Now, process the following text:
+                """
+                ${text}
+                """`;
+                
+                const chatHistory = [{ role: "user", parts: [{ text: prompt }] }];
+                const payload = {
+                    contents: chatHistory,
+                    generationConfig: {
+                        responseMimeType: "application/json",
+                        responseSchema: {
+                            type: "ARRAY",
+                            items: {
+                                type: "OBJECT",
+                                properties: {
+                                    "name": { "type": "STRING" },
+                                    "credits": { "type": "NUMBER" },
+                                    "grade": { "type": "STRING" }
+                                }
+                            }
+                        }
+                    }
+                };
+
+                const apiKey = "AIzaSyBB476jafxuZ0LbQaboaiEoKpB0U4bK0Co";
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
+
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!response.ok) {
+                    throw new Error(`API call failed with status: ${response.status}`);
+                }
+
+                const result = await response.json();
+                const jsonString = result?.candidates?.[0]?.content?.parts?.[0]?.text;
+
+                if (!jsonString) {
+                    throw new Error("API response was empty or malformed.");
+                }
+
+                const parsedCourses = JSON.parse(jsonString);
+
+                if (!Array.isArray(parsedCourses)) {
+                    throw new Error("Parsed data is not an array.");
+                }
+
+                // Clear current courses before adding new ones
+                coursesContainer.innerHTML = '';
+                parsedCourses.forEach(course => {
+                    // Check for valid data before creating the row
+                    if (course.name && course.credits && course.grade) {
+                        createCourseRow(course.name, course.credits, course.grade);
+                    }
+                });
+
+                showMessage("Success!", "Courses have been automatically added. Please review the details.");
+
+            } catch (error) {
+                console.error("Parsing failed:", error);
+                showMessage("Parsing Failed", "There was an error parsing the text. Please ensure the text format is clear and try again, or enter the data manually.");
+            } finally {
+                // Hide loading state
+                parseTranscriptBtn.disabled = false;
+                parseSpinner.classList.add('hidden');
+                parseText.textContent = 'Parse & Fill Courses';
+            }
+        });
 
         // Main calculation function, used by both "Calculate" and "What If"
         function performCalculations() {
