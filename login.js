@@ -12,7 +12,7 @@ loginForm.addEventListener("submit", (e) => {
   signInWithEmailAndPassword(auth, email, password)
     .then((userCredential) => {
       alert("Login successful!");
-      window.location.href = "dashboard.html"; // redirect after login
+      window.location.href = "main.html"; // redirect after login
     })
     .catch((error) => {
       alert(error.message);
