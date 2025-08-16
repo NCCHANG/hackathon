@@ -1,230 +1,713 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <link rel="stylesheet" href="main.css" />
-  <title>IniMestiMMU</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cloud CGPA Calculator</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6;
+        }
+        .container {
+            max-width: 800px;
+        }
+        .grade-input {
+            width: 100%;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='%236b7280'%3E%3Cpath fill-rule='evenodd' d='M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z' clip-rule='evenodd' /%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 0.75rem center;
+            background-size: 1.5rem;
+            padding-right: 2.5rem;
+        }
+        .loading-spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #3b82f6;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
 </head>
-<body>
-  <div class="app">
-    <div class="gutter"></div>
+<body class="bg-gray-100 p-4 sm:p-8">
 
-    <header>
-      <div class="bar">
-        <div class="brand">IniMestiMMU</div>
-        <div class="spacer"></div>
-        <div class="logout" id="logout" onclick="logout()">Logout</div>
-        <div class="crumb" id="crumb">home</div>
-      </div>
-    </header>
-
-    <main>  
-      <!-- HOME -->
-      <section id="home" class="panel p16">
-      <div class="section-title">Welcome</div>
-        <div class="cards">
-          <a class="card-btn panel" onclick="go('browse')" aria-label="Go to Browse">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="7" height="7"/><rect x="14" y="4" width="7" height="7"/><rect x="14" y="13" width="7" height="7"/><rect x="3" y="13" width="7" height="7"/></svg>
-            Browse
-          </a>
-          <a class="card-btn panel" onclick="go('share')" aria-label="Go to Share">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
-            Share
-          </a>
-        </div>
-      </section>
-
-      <!-- BROWSE -->
-      <section id="browse" class="panel p16 hidden" role="region" aria-label="Browse subjects">
-        <div class="search-wrap">
-          <input id="q" class="input" type="text" placeholder="Enter subject name / code…" onkeydown="if(event.key==='Enter'){ runSearch(); }" />
-          <button class="btn btn-accent" title="Search" onclick="runSearch()">➜</button>
-        </div>
-        <div class="section-title">You may be interested…</div>
-        <div id="results" class="list" aria-live="polite"></div>
-      </section>
-
-      <!-- SHARE -->
-      <section id="share" class="panel p16 hidden" role="region" aria-label="Share a subject">
-        <form id="shareForm" onsubmit="submitShare(event)">
-          <div class="row">
-            <div>
-              <label>Subject Code
-                <input type="text" id="code" required placeholder="e.g., CCP6224" />
-              </label>
+    <div class="container mx-auto bg-white p-6 sm:p-8 rounded-2xl shadow-xl space-y-8">
+        <h1 class="text-3xl sm:text-4xl font-extrabold text-gray-900 text-center tracking-tight mb-4">Cloud CGPA Calculator</h1>
+        <p class="text-center text-gray-600 mb-8 max-w-lg mx-auto">This version uses a cloud database to save your data automatically across sessions and devices.</p>
+        
+        <!-- Auth Section -->
+        <div id="auth-section" class="space-y-4">
+            <h2 class="text-2xl font-bold text-gray-800 text-center">Login to Save Your Data</h2>
+            <div class="space-y-4 max-w-sm mx-auto p-6 bg-gray-50 rounded-lg shadow-inner">
+                <div>
+                    <label for="email-input" class="block text-sm font-medium text-gray-700">Email</label>
+                    <input type="email" id="email-input" placeholder="you@example.com" class="mt-1 w-full p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 transition duration-150">
+                </div>
+                <div>
+                    <label for="password-input" class="block text-sm font-medium text-gray-700">Password</label>
+                    <input type="password" id="password-input" placeholder="••••••••" class="mt-1 w-full p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 transition duration-150">
+                </div>
+                <div class="flex flex-col sm:flex-row gap-4">
+                    <button id="signup-btn" class="flex-1 py-3 px-4 bg-blue-600 text-white font-semibold rounded-lg shadow-md hover:bg-blue-700 transition duration-150 transform hover:scale-105">
+                        Sign Up
+                    </button>
+                    <button id="login-btn" class="flex-1 py-3 px-4 bg-green-600 text-white font-semibold rounded-lg shadow-md hover:bg-green-700 transition duration-150 transform hover:scale-105">
+                        Log In
+                    </button>
+                </div>
             </div>
-            <div>
-              <label>Subject Name
-                <input type="text" id="name" required placeholder="e.g., Object-Oriented Analysis & Design" />
-              </label>
-            </div>
-          </div>
-          <div class="row" style="margin-top:12px">
-            <div style="grid-column:1 / -1">
-              <label>Description / Why you recommend it?
-                <textarea id="desc" placeholder="Key topics, assessments, tips…"></textarea>
-              </label>
-            </div>
-          </div>
-
-          <div class="drop" id="drop">
-            <input id="upload" type="file" accept="image/*,application/pdf" />
-            Drag & drop a syllabus / image here, or <span style="text-decoration:underline; cursor:pointer" onclick="document.getElementById('upload').click()">browse</span>
-            <div id="fileName" style="margin-top:8px"></div>
-          </div>
-
-          <div class="actions">
-            <button type="button" class="btn" onclick="go('home')">Cancel</button>
-            <button type="submit" class="btn btn-accent">Share ➜</button>
-          </div>
-        </form>
-      </section>
-
-      <!-- DETAIL -->
-      <section id="detail" class="panel hidden" role="region" aria-label="Subject details">
-        <div class="header">
-          <button class="back" onclick="go('browse')">⟵ Back</button>
-          <h2 id="dTitle" class="mb8" style="margin:0"></h2>
-          <button id="favBtn" class="fav" onclick="toggleFav()" title="Save to favourites">❤ <span id="favText">Save</span></button>
+            <p id="auth-status" class="text-center text-sm font-medium text-gray-600"></p>
         </div>
-        <div class="detail-wrap">
-          <div>
-            <div class="p16">
-              <h3 style="margin-top:0">Overview</h3>
-              <p id="dDesc" style="line-height:1.6; color:var(--muted)"></p>
-              <h3>Topics</h3>
-              <ul id="dTopics" style="line-height:1.7; padding-left:18px"></ul>
+
+        <!-- Main Calculator UI (initially hidden) -->
+        <div id="calculator-ui" class="hidden space-y-8">
+            <!-- User Info and Logout Section -->
+            <div class="flex flex-col sm:flex-row items-center justify-between bg-gray-50 p-4 rounded-xl shadow-inner border border-gray-200">
+                <span id="user-info" class="text-gray-600 text-sm font-medium mb-2 sm:mb-0">
+                    Welcome!
+                </span>
+                <button id="logout-btn" class="py-2 px-4 bg-red-600 text-white font-semibold rounded-lg shadow-sm hover:bg-red-700 transition duration-150 transform hover:scale-105">
+                    Log Out
+                </button>
             </div>
-          </div>
-          <aside class="meta">
-            <table>
-              <tr><td>Code</td><td id="dCode"></td></tr>
-              <tr><td>Credits</td><td id="dCredits"></td></tr>
-              <tr><td>Level</td><td id="dLevel"></td></tr>
-              <tr><td>Favourited</td><td id="dFav"></td></tr>
-            </table>
-          </aside>
+            
+            <!-- Semester History Section -->
+            <div class="bg-gray-50 p-6 rounded-xl shadow-inner border border-gray-200">
+                <h2 class="text-xl font-bold text-gray-800 mb-4">Past Semesters</h2>
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-2 font-bold text-gray-700">
+                    <div class="col-span-2 sm:col-span-1">Semester Name</div>
+                    <div class="col-span-1 sm:col-span-1">GPA</div>
+                    <div class="col-span-1 sm:col-span-1">Credits</div>
+                    <div class="col-span-1 sm:col-span-1"></div>
+                </div>
+                <div id="past-semesters-container" class="space-y-4">
+                    <!-- Past semester rows will be added here by JavaScript -->
+                </div>
+                <button id="add-semester-btn" class="mt-6 w-full py-3 px-4 bg-gray-200 text-gray-700 font-semibold rounded-lg shadow-sm hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-400 transition duration-150">
+                    + Add A Past Semester
+                </button>
+            </div>
+
+            <!-- Current Semester Courses Section -->
+            <div class="bg-white p-6 rounded-xl shadow-lg border border-gray-200">
+                <h2 class="text-xl font-bold text-gray-800 mb-4">Current Semester Courses</h2>
+                <div class="grid grid-cols-3 sm:grid-cols-4 gap-4 mb-2 font-bold text-gray-700">
+                    <div class="col-span-2 sm:col-span-1">Course Name</div>
+                    <div class="col-span-1 sm:col-span-1">Credits</div>
+                    <div class="col-span-2 sm:col-span-1">Grade</div>
+                    <div class="col-span-1 sm:col-span-1"></div>
+                </div>
+                <div id="courses-container" class="space-y-4">
+                    <!-- Course rows will be added here by JavaScript -->
+                </div>
+                <button id="add-course-btn" class="mt-6 w-full py-3 px-4 bg-gray-200 text-gray-700 font-semibold rounded-lg shadow-sm hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-400 transition duration-150">
+                    + Add Another Course
+                </button>
+            </div>
+
+            <!-- "What If" Scenario Planner Section -->
+            <div class="bg-blue-50 p-6 rounded-2xl shadow-inner border border-blue-200">
+                <h2 class="text-xl font-bold text-blue-800 mb-4">What If Scenario Planner</h2>
+                <p class="text-sm text-blue-700 mb-4">
+                    Play with different grades for your current courses to see the hypothetical impact on your GPA. This will not save to the cloud.
+                </p>
+                <button id="what-if-btn" class="w-full py-3 px-4 bg-blue-600 text-white font-bold rounded-lg shadow-md hover:bg-blue-700 transition duration-150 transform hover:scale-105">
+                    Calculate "What If" Scenario
+                </button>
+                <div id="what-if-results" class="hidden mt-4 bg-white p-4 rounded-xl shadow-md space-y-2">
+                    <p class="text-sm font-medium text-gray-500">Hypothetical Semester GPA:</p>
+                    <p id="what-if-sem-gpa" class="text-2xl font-extrabold text-blue-600">--</p>
+                    <p class="text-sm font-medium text-gray-500">Hypothetical New CGPA:</p>
+                    <p id="what-if-cgpa" class="text-2xl font-extrabold text-blue-600">--</p>
+                </div>
+            </div>
+
+            <!-- Target CGPA Section -->
+            <div class="bg-gray-50 p-6 rounded-xl shadow-inner border border-gray-200">
+                <h2 class="text-xl font-bold text-gray-800 mb-4">Set a Goal</h2>
+                <label for="target-cgpa" class="block text-sm font-medium text-gray-700 mb-1">Target CGPA</label>
+                <input type="number" id="target-cgpa" placeholder="e.g., 3.80" step="0.01" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 transition duration-150">
+            </div>
+
+            <!-- Calculate and Save Buttons -->
+            <div class="pt-6 border-t border-gray-200">
+                <div class="flex flex-col sm:flex-row gap-4">
+                    <button id="calculate-btn" class="flex-1 py-4 px-6 bg-blue-600 text-white font-bold rounded-xl shadow-lg hover:bg-blue-700 transition duration-150 transform hover:scale-105">
+                        Calculate CGPA & Strategy
+                    </button>
+                    <button id="save-btn" class="flex-1 py-4 px-6 bg-green-600 text-white font-bold rounded-xl shadow-lg hover:bg-green-700 transition duration-150 transform hover:scale-105">
+                        Save to Cloud
+                    </button>
+                    <button id="clear-btn" class="flex-1 py-4 px-6 bg-red-600 text-white font-bold rounded-xl shadow-lg hover:bg-red-700 transition duration-150 transform hover:scale-105">
+                        Clear All
+                    </button>
+                </div>
+            </div>
+
+            <!-- Results & Insights Section -->
+            <div id="results-section" class="hidden bg-white p-6 rounded-2xl shadow-xl border border-blue-200 space-y-6">
+                <h2 class="text-2xl font-bold text-blue-700 text-center">Results & Insights</h2>
+                
+                <!-- Summary Section -->
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-6 text-center">
+                    <div class="bg-blue-50 p-4 rounded-xl shadow-md border border-blue-100">
+                        <p class="text-sm font-medium text-blue-500">Your Semester GPA</p>
+                        <p id="sem-gpa-result" class="text-4xl font-extrabold text-blue-600 mt-1">--</p>
+                    </div>
+                    <div class="bg-blue-50 p-4 rounded-xl shadow-md border border-blue-100">
+                        <p class="text-sm font-medium text-blue-500">Your New CGPA</p>
+                        <p id="cgpa-result" class="text-4xl font-extrabold text-blue-600 mt-1">--</p>
+                    </div>
+                    <div class="bg-blue-50 p-4 rounded-xl shadow-md border border-blue-100">
+                        <p class="text-sm font-medium text-blue-500">Required Semester GPA</p>
+                        <p id="required-gpa-result" class="text-4xl font-extrabold text-blue-600 mt-1">--</p>
+                    </div>
+                </div>
+
+                <!-- Insights Text -->
+                <div class="bg-yellow-50 p-6 rounded-xl border border-yellow-200">
+                    <h3 class="flex items-center text-lg font-bold text-yellow-800 mb-2">
+                        <svg class="h-6 w-6 mr-2 text-yellow-600" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path></svg>
+                        Strategic Advice
+                    </h3>
+                    <p id="insights-text" class="text-yellow-700 leading-relaxed">
+                        Based on your inputs, this is where you should focus your efforts.
+                    </p>
+                </div>
+            </div>
+            
+            <!-- Projections Section -->
+            <div id="projections-section" class="hidden bg-gray-50 p-6 rounded-2xl shadow-xl border border-gray-200">
+                <h2 class="text-xl font-bold text-gray-800 mb-4 text-center">Future CGPA Projections</h2>
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-center">
+                    <div class="p-4 rounded-lg bg-white shadow-md">
+                        <p class="text-sm font-medium text-gray-500">If your GPA is 2.5</p>
+                        <p id="proj-25-result" class="text-2xl font-bold text-gray-700 mt-1">--</p>
+                    </div>
+                    <div class="p-4 rounded-lg bg-white shadow-md">
+                        <p class="text-sm font-medium text-gray-500">If your GPA is 3.0</p>
+                        <p id="proj-30-result" class="text-2xl font-bold text-gray-700 mt-1">--</p>
+                    </div>
+                    <div class="p-4 rounded-lg bg-white shadow-md">
+                        <p class="text-sm font-medium text-gray-500">If your GPA is 3.5</p>
+                        <p id="proj-35-result" class="text-2xl font-bold text-gray-700 mt-1">--</p>
+                    </div>
+                    <div class="p-4 rounded-lg bg-white shadow-md">
+                        <p class="text-sm font-medium text-gray-500">If your GPA is 4.0</p>
+                        <p id="proj-40-result" class="text-2xl font-bold text-gray-700 mt-1">--</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Chart Section -->
+            <div id="chart-section" class="hidden bg-white p-6 rounded-2xl shadow-xl border border-gray-200">
+                <h2 class="text-xl font-bold text-gray-800 mb-4 text-center">Grade Distribution</h2>
+                <canvas id="gradeDistributionChart" class="max-w-xl mx-auto"></canvas>
+            </div>
         </div>
-      </section>
-    </main>
 
-    <div class="gutter"></div>
-  </div>
+        <!-- Message Box -->
+        <div id="message-box" class="fixed inset-0 bg-gray-600 bg-opacity-75 hidden items-center justify-center p-4">
+            <div class="bg-white p-8 rounded-xl shadow-2xl max-w-sm w-full text-center space-y-4">
+                <h3 id="message-title" class="text-xl font-bold text-gray-800"></h3>
+                <p id="message-content" class="text-gray-600"></p>
+                <div class="flex justify-center">
+                    <button id="message-close-btn" class="mt-4 px-6 py-2 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition duration-150">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
 
-  <script>
-    // --- Simple in-memory dataset (persisted to localStorage when you "Share") ---
-    const seed = [
-      { code:'CCP6224', name:'Object-Oriented Analysis & Design', desc:'Design and implement software with UML, patterns, and a modular architecture. Final project often includes a Java Swing app.', credits:3, level:'Year 2', topics:['UML (use case, class, sequence)','Design patterns','Java Swing','Group project','Individual Q&A'] },
-      { code:'CMA6314', name:'Computational Methods', desc:'Root-finding (Bisection, Secant, Newton), interpolation and numerical integration with practical labs.', credits:3, level:'Year 3', topics:['Bisection/Secant/Newton','Error analysis','MATLAB/FreeMat labs'] },
-      { code:'CSN6224', name:'Computer Networks', desc:'Design high-availability topologies and simulate with Packet Tracer; subnetting, routing and switching.', credits:3, level:'Year 2', topics:['OSI vs TCP/IP','Subnetting & VLANs','Routing protocols','Packet Tracer labs'] },
-      { code:'TSN2201', name:'Computer Networks (Foundation)', desc:'Core networking concepts for the supplementary exam: models, addressing, and protocols.', credits:3, level:'Year 1', topics:['OSI layers','IP addressing','Transport basics'] }
-    ];
+    <!-- Firebase SDKs -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, onAuthStateChanged, signOut, signInWithEmailAndPassword, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-    const LS_KEY = 'inimesti.mmu.subjects.v1';
-    const FAV_KEY = 'inimesti.mmu.favs.v1';
+        // Your web app's Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyBqe2vF4mmXbAjuWIcV_zCfc7hgzTFKSNQ",
+            authDomain: "cgpacalculator-44f45.firebaseapp.com",
+            projectId: "cgpacalculator-44f45",
+            storageBucket: "cgpacalculator-44f45.firebasestorage.app",
+            messagingSenderId: "976052597181",
+            appId: "1:976052597181:web:6147fa61a823a4f0c062d4",
+            measurementId: "G-5LGEGPHLED"
+        };
+        
+        // This is a dynamic app ID based on your project for storing user-specific data.
+        const appId = firebaseConfig.projectId;
 
-    const subjects = JSON.parse(localStorage.getItem(LS_KEY) || 'null') || seed;
-    let favourites = new Set(JSON.parse(localStorage.getItem(FAV_KEY) || '[]'));
+        let db;
+        let auth;
+        let userId;
 
-    // --- Navigation ---
-    const sections = ['home','browse','share','detail'];
-    function go(id){
-      sections.forEach(s=>document.getElementById(s).classList.add('hidden'));
-      document.getElementById(id).classList.remove('hidden');
-      document.getElementById('crumb').textContent = id.charAt(0).toUpperCase()+id.slice(1);
-      if(id==='browse'){ renderList(subjects.slice(0,6)); }
-    }
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        db = getFirestore(app);
+        auth = getAuth(app);
 
-    // --- Browse & Search ---
-    const resultsEl = document.getElementById('results');
-    function runSearch(){
-      const term = document.getElementById('q').value.trim().toLowerCase();
-      const out = !term ? subjects : subjects.filter(s=> s.name.toLowerCase().includes(term) || s.code.toLowerCase().includes(term));
-      renderList(out);
-    }
+        // UI elements
+        const authSection = document.getElementById('auth-section');
+        const emailInput = document.getElementById('email-input');
+        const passwordInput = document.getElementById('password-input');
+        const signupBtn = document.getElementById('signup-btn');
+        const loginBtn = document.getElementById('login-btn');
+        const authStatus = document.getElementById('auth-status');
+        const calculatorUi = document.getElementById('calculator-ui');
+        const userInfoSpan = document.getElementById('user-info');
+        const logoutBtn = document.getElementById('logout-btn');
 
-    function renderList(list){
-      if(list.length===0){ resultsEl.innerHTML = '<div class="p16" style="color:var(--muted)">No results. Try a different name/code.</div>'; return; }
-      resultsEl.innerHTML = list.map(s=> `
-        <div class="item">
-          <div>
-            <div class="pill">${s.code}</div>
-            <h4>${s.name}</h4>
-            <div style="color:var(--muted); font-size:14px">${s.desc}</div>
-          </div>
-          <div class="open">
-            <button class="btn" onclick='openDetail(${JSON.stringify(s.code)})'>Open ➜</button>
-          </div>
-        </div>`).join('');
-    }
+        // Mapping of letter grades to grade points
+        const gradePoints = {
+            'A+': 4.0, 'A': 4.0, 'A-': 3.7,
+            'B+': 3.3, 'B': 3.0, 'B-': 2.7,
+            'C+': 2.3, 'C': 2.0, 'C-': 1.7,
+            'D+': 1.3, 'D': 1.0,
+            'F': 0.0
+        };
 
-    // --- Detail ---
-    let current = null;
-    function openDetail(code){
-      current = subjects.find(x=>x.code===code);
-      if(!current) return;
-      document.getElementById('dTitle').textContent = `${current.name}`;
-      document.getElementById('dDesc').textContent = current.desc;
-      document.getElementById('dCode').textContent = current.code;
-      document.getElementById('dCredits').textContent = current.credits+ ' credit hours';
-      document.getElementById('dLevel').textContent = current.level;
-      const ul = document.getElementById('dTopics'); ul.innerHTML = current.topics.map(t=>`<li>${t}</li>`).join('');
-      setFavUI();
-      go('detail');
-    }
+        const pastSemestersContainer = document.getElementById('past-semesters-container');
+        const addSemesterBtn = document.getElementById('add-semester-btn');
+        const targetCgpaInput = document.getElementById('target-cgpa');
+        const coursesContainer = document.getElementById('courses-container');
+        const addCourseBtn = document.getElementById('add-course-btn');
+        const calculateBtn = document.getElementById('calculate-btn');
+        const saveBtn = document.getElementById('save-btn');
+        const clearBtn = document.getElementById('clear-btn');
+        const whatIfBtn = document.getElementById('what-if-btn');
+        const whatIfResults = document.getElementById('what-if-results');
+        const whatIfSemGpa = document.getElementById('what-if-sem-gpa');
+        const whatIfCgpa = document.getElementById('what-if-cgpa');
 
-    function setFavUI(){
-      const isFav = favourites.has(current.code);
-      document.getElementById('dFav').textContent = isFav ? 'Yes' : 'No';
-      document.getElementById('favText').textContent = isFav ? 'Saved' : 'Save';
-      document.getElementById('favBtn').style.color = isFav ? 'var(--danger)' : 'var(--text)';
-    }
+        const resultsSection = document.getElementById('results-section');
+        const semGpaResult = document.getElementById('sem-gpa-result');
+        const cgpaResult = document.getElementById('cgpa-result');
+        const requiredGpaResult = document.getElementById('required-gpa-result');
+        const insightsText = document.getElementById('insights-text');
+        const projectionsSection = document.getElementById('projections-section');
+        const proj25Result = document.getElementById('proj-25-result');
+        const proj30Result = document.getElementById('proj-30-result');
+        const proj35Result = document.getElementById('proj-35-result');
+        const proj40Result = document.getElementById('proj-40-result');
+        const messageBox = document.getElementById('message-box');
+        const messageTitle = document.getElementById('message-title');
+        const messageContent = document.getElementById('message-content');
+        const messageCloseBtn = document.getElementById('message-close-btn');
 
-    function toggleFav(){
-      if(!current) return;
-      if(favourites.has(current.code)) favourites.delete(current.code); else favourites.add(current.code);
-      localStorage.setItem(FAV_KEY, JSON.stringify([...favourites]));
-      setFavUI();
-    }
+        // Function to show a custom message box instead of alert()
+        function showMessage(title, content) {
+            messageTitle.textContent = title;
+            messageContent.textContent = content;
+            messageBox.classList.remove('hidden');
+            messageBox.classList.add('flex');
+        }
 
-    // --- Share ---
-    const drop = document.getElementById('drop');
-    const upload = document.getElementById('upload');
-    const fileName = document.getElementById('fileName');
+        // Close the message box
+        messageCloseBtn.addEventListener('click', () => {
+            messageBox.classList.remove('flex');
+            messageBox.classList.add('hidden');
+        });
+        
+        // Function to clear all inputs and hide results
+        function clearAllInputs() {
+            pastSemestersContainer.innerHTML = '';
+            coursesContainer.innerHTML = '';
+            targetCgpaInput.value = '';
+            resultsSection.classList.add('hidden');
+            projectionsSection.classList.add('hidden');
+            whatIfResults.classList.add('hidden');
+        }
 
-    ;['dragenter','dragover'].forEach(evt=> drop.addEventListener(evt, e=>{ e.preventDefault(); drop.classList.add('active'); }));
-    ;['dragleave','drop'].forEach(evt=> drop.addEventListener(evt, e=>{ e.preventDefault(); drop.classList.remove('active'); }));
-    drop.addEventListener('drop', e=>{ upload.files = e.dataTransfer.files; fileName.textContent = upload.files[0] ? 'Attached: '+upload.files[0].name : '' });
-    upload.addEventListener('change', ()=>{ fileName.textContent = upload.files[0] ? 'Attached: '+upload.files[0].name : '' });
+        // Function to create a new past semester row
+        function createSemesterRow(semName = '', semGpa = '', semCredits = '') {
+            const semesterRow = document.createElement('div');
+            semesterRow.className = 'semester-row grid grid-cols-2 sm:grid-cols-4 gap-4 items-center bg-gray-100 p-4 rounded-lg border border-gray-200';
+            semesterRow.innerHTML = `
+                <div class="col-span-2 sm:col-span-1">
+                    <input type="text" placeholder="Semester Name" value="${semName}" class="sem-name w-full p-2 border border-gray-300 rounded-lg">
+                </div>
+                <div class="col-span-1 sm:col-span-1">
+                    <input type="number" placeholder="GPA" value="${semGpa}" step="0.01" class="sem-gpa w-full p-2 border border-gray-300 rounded-lg">
+                </div>
+                <div class="col-span-1 sm:col-span-1">
+                    <input type="number" placeholder="Credits" value="${semCredits}" step="1" class="sem-credits w-full p-2 border border-gray-300 rounded-lg">
+                </div>
+                <div class="col-span-1 sm:col-span-1 flex justify-end">
+                    <button class="remove-semester-btn p-2 text-gray-400 hover:text-red-500 transition-colors duration-150">
+                        <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm6 0a1 1 0 112 0v6a1 1 0 11-2 0V8z" clip-rule="evenodd"></path></svg>
+                    </button>
+                </div>
+            `;
+            pastSemestersContainer.appendChild(semesterRow);
+            semesterRow.querySelector('.remove-semester-btn').addEventListener('click', () => {
+                pastSemestersContainer.removeChild(semesterRow);
+            });
+        }
 
-    function submitShare(e){
-      e.preventDefault();
-      const code = document.getElementById('code').value.trim().toUpperCase();
-      const name = document.getElementById('name').value.trim();
-      const desc = document.getElementById('desc').value.trim() || 'Shared by the community.';
-      if(!code || !name) return;
-      const exists = subjects.some(s=> s.code===code);
-      const entry = { code, name, desc, credits:3, level:'Shared', topics:['Syllabus pending'] };
-      if(exists){
-        // update existing
-        const idx = subjects.findIndex(s=> s.code===code);
-        subjects[idx] = { ...subjects[idx], name, desc };
-      } else {
-        subjects.unshift(entry);
-      }
-      localStorage.setItem(LS_KEY, JSON.stringify(subjects));
-      (e.target).reset(); fileName.textContent='';
-      go('browse'); runSearch();
-    }
-    function logout() {
-      localStorage.clear();   // clear stored session data
-      window.location.href = "login.html";             // go back to login page
-      alert("You have been logged out."); // optional
-    }
+        // Function to create a new course input row
+        function createCourseRow(courseName = '', creditHours = '', grade = '') {
+            const courseRow = document.createElement('div');
+            courseRow.className = 'course-row grid grid-cols-3 sm:grid-cols-4 gap-4 items-center';
+            courseRow.innerHTML = `
+                <div class="col-span-2 sm:col-span-1">
+                    <input type="text" placeholder="Course Name" value="${courseName}" class="course-name w-full p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 transition duration-150">
+                </div>
+                <div class="col-span-1 sm:col-span-1">
+                    <input type="number" placeholder="Credits" value="${creditHours}" step="1" class="credit-hours w-full p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 transition duration-150">
+                </div>
+                <div class="col-span-2 sm:col-span-1">
+                    <select class="grade-input w-full p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 transition duration-150">
+                        <option value="" disabled selected>Select Grade</option>
+                        <option value="A+" ${grade === 'A+' ? 'selected' : ''}>A+</option>
+                        <option value="A" ${grade === 'A' ? 'selected' : ''}>A</option>
+                        <option value="A-" ${grade === 'A-' ? 'selected' : ''}>A-</option>
+                        <option value="B+" ${grade === 'B+' ? 'selected' : ''}>B+</option>
+                        <option value="B" ${grade === 'B' ? 'selected' : ''}>B</option>
+                        <option value="B-" ${grade === 'B-' ? 'selected' : ''}>B-</option>
+                        <option value="C+" ${grade === 'C+' ? 'selected' : ''}>C+</option>
+                        <option value="C" ${grade === 'C' ? 'selected' : ''}>C</option>
+                        <option value="C-" ${grade === 'C-' ? 'selected' : ''}>C-</option>
+                        <option value="D+" ${grade === 'D+' ? 'selected' : ''}>D+</option>
+                        <option value="D" ${grade === 'D' ? 'selected' : ''}>D</option>
+                        <option value="F" ${grade === 'F' ? 'selected' : ''}>F</option>
+                    </select>
+                </div>
+                <div class="col-span-1 sm:col-span-1 flex justify-end">
+                    <button class="remove-course-btn p-2 text-gray-400 hover:text-red-500 transition-colors duration-150">
+                        <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm6 0a1 1 0 112 0v6a1 1 0 11-2 0V8z" clip-rule="evenodd"></path></svg>
+                    </button>
+                </div>
+            `;
+            coursesContainer.appendChild(courseRow);
+            courseRow.querySelector('.remove-course-btn').addEventListener('click', () => {
+                coursesContainer.removeChild(courseRow);
+            });
+        }
 
-    // load default view
-    go('home');
-  </script>
+        // Function to save all data to Firebase
+        async function saveData() {
+            if (!userId) {
+                showMessage("Authentication Required", "Please log in before saving your data.");
+                return;
+            }
+
+            const data = {
+                targetCgpa: targetCgpaInput.value,
+                semesters: [],
+                courses: []
+            };
+            
+            // Collect past semesters
+            const semesterRows = document.querySelectorAll('.semester-row');
+            semesterRows.forEach(row => {
+                data.semesters.push({
+                    name: row.querySelector('.sem-name').value,
+                    gpa: row.querySelector('.sem-gpa').value,
+                    credits: row.querySelector('.sem-credits').value
+                });
+            });
+
+            // Collect current semester courses
+            const courseRows = document.querySelectorAll('.course-row');
+            courseRows.forEach(row => {
+                data.courses.push({
+                    name: row.querySelector('.course-name').value,
+                    credits: row.querySelector('.credit-hours').value,
+                    grade: row.querySelector('.grade-input').value
+                });
+            });
+
+            const docRef = doc(db, 'artifacts', appId, 'users', userId, 'cgpaData', 'myCgpaData');
+            try {
+                await setDoc(docRef, data);
+                showMessage("Save Successful", "Your data has been saved to the cloud!");
+            } catch (e) {
+                console.error("Error adding document: ", e);
+                showMessage("Save Failed", "Could not save your data. Please check your connection.");
+            }
+        }
+
+        // Function to load all data from a JS object
+        function loadData(data) {
+            // Clear existing inputs before populating
+            targetCgpaInput.value = '';
+            pastSemestersContainer.innerHTML = '';
+            coursesContainer.innerHTML = '';
+            resultsSection.classList.add('hidden');
+            projectionsSection.classList.add('hidden');
+            whatIfResults.classList.add('hidden');
+
+            targetCgpaInput.value = data.targetCgpa || '';
+
+            if (data.semesters && data.semesters.length > 0) {
+                 data.semesters.forEach(semester => {
+                     createSemesterRow(semester.name, semester.gpa, semester.credits);
+                 });
+            } else {
+                createSemesterRow();
+            }
+
+            if (data.courses && data.courses.length > 0) {
+                 data.courses.forEach(course => {
+                     createCourseRow(course.name, course.credits, course.grade);
+                 });
+            } else {
+                createCourseRow();
+            }
+        }
+
+        // --- AUTHENTICATION FLOW ---
+
+        // Listen for authentication state changes
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                // User is signed in
+                userId = user.uid;
+                userInfoSpan.textContent = `You are logged in with ID: ${userId}`;
+                authSection.classList.add('hidden');
+                calculatorUi.classList.remove('hidden');
+                
+                // Now that we have a user, listen for their data
+                listenForData();
+
+            } else {
+                // User is signed out
+                userId = null;
+                authSection.classList.remove('hidden');
+                calculatorUi.classList.add('hidden');
+                showMessage("Signed Out", "You have been signed out. Please log in to access your data.");
+            }
+        });
+
+        // Handle sign up button click
+        signupBtn.addEventListener('click', async () => {
+            const email = emailInput.value;
+            const password = passwordInput.value;
+
+            if (!email || !password) {
+                authStatus.textContent = "Please enter both email and password.";
+                return;
+            }
+
+            try {
+                await createUserWithEmailAndPassword(auth, email, password);
+                authStatus.textContent = "Successfully created account! You are now logged in.";
+                showMessage("Success!", "Account created. You are now logged in.");
+            } catch (error) {
+                console.error("Sign up failed:", error);
+                authStatus.textContent = `Sign up failed: ${error.message}`;
+                showMessage("Sign Up Failed", error.message);
+            }
+        });
+
+        // Handle login button click
+        loginBtn.addEventListener('click', async () => {
+            const email = emailInput.value;
+            const password = passwordInput.value;
+
+            if (!email || !password) {
+                authStatus.textContent = "Please enter both email and password.";
+                return;
+            }
+
+            try {
+                await signInWithEmailAndPassword(auth, email, password);
+                authStatus.textContent = "Successfully logged in!";
+                showMessage("Success!", "You have been logged in.");
+            } catch (error) {
+                console.error("Login failed:", error);
+                authStatus.textContent = `Login failed: ${error.message}`;
+                showMessage("Login Failed", error.message);
+            }
+        });
+        
+        // Handle logout button click
+        logoutBtn.addEventListener('click', () => {
+            signOut(auth);
+        });
+
+        // Function to listen for data after successful authentication
+        const listenForData = () => {
+            const docRef = doc(db, 'artifacts', appId, 'users', userId, 'cgpaData', 'myCgpaData');
+            onSnapshot(docRef, (docSnap) => {
+                if (docSnap.exists()) {
+                    loadData(docSnap.data());
+                    showMessage("Data Loaded", "Your data has been loaded from the cloud.");
+                } else {
+                    showMessage("Welcome!", "No saved data found. Start by adding your past semesters and courses.");
+                    loadData({semesters: [], courses: []}); // Load empty data to clear inputs
+                }
+            }, (error) => {
+                console.error("Error getting document:", error);
+                showMessage("Database Error", "Failed to load data from the cloud. Please check your connection.");
+            });
+        };
+
+        // Event listeners for adding rows
+        addSemesterBtn.addEventListener('click', () => createSemesterRow());
+        addCourseBtn.addEventListener('click', () => createCourseRow());
+        
+        // Event listener for the save button
+        saveBtn.addEventListener('click', saveData);
+        
+        // Event listener for the clear button
+        clearBtn.addEventListener('click', clearAllInputs);
+
+        // Main calculation function, used by both "Calculate" and "What If"
+        function performCalculations() {
+            let prevTotalGpXCh = 0;
+            let prevTotalCredits = 0;
+            const semesterRows = document.querySelectorAll('.semester-row');
+            for (const row of semesterRows) {
+                const gpa = parseFloat(row.querySelector('.sem-gpa').value);
+                const credits = parseFloat(row.querySelector('.sem-credits').value);
+                if (isNaN(gpa) || isNaN(credits) || credits <= 0) {
+                    return { error: "Please ensure all past semester fields have a valid GPA and Credits." };
+                }
+                prevTotalGpXCh += gpa * credits;
+                prevTotalCredits += credits;
+            }
+
+            let semTotalGpXCh = 0;
+            let semTotalCredits = 0;
+            let highestCreditCourse = { name: null, credits: 0 };
+            
+            const courseRows = document.querySelectorAll('.course-row');
+            if (courseRows.length === 0) {
+                return { error: "Please add at least one current course." };
+            }
+
+            for (const row of courseRows) {
+                const creditHoursInput = row.querySelector('.credit-hours');
+                const gradeSelect = row.querySelector('.grade-input');
+                const courseNameInput = row.querySelector('.course-name');
+                
+                const creditHours = parseFloat(creditHoursInput.value);
+                const grade = gradeSelect.value;
+                const courseName = courseNameInput.value || "This Course";
+                
+                if (isNaN(creditHours) || creditHours <= 0 || !grade) {
+                    return { error: "Please ensure all current course fields have a valid Credit Hour and a selected Grade." };
+                }
+                
+                const gp = gradePoints[grade];
+                semTotalGpXCh += gp * creditHours;
+                semTotalCredits += creditHours;
+                
+                if (creditHours > highestCreditCourse.credits) {
+                    highestCreditCourse.credits = creditHours;
+                    highestCreditCourse.name = courseName;
+                }
+            }
+            
+            const semGpa = semTotalGpXCh / semTotalCredits;
+            const cumulativeGpXCh = prevTotalGpXCh + semTotalGpXCh;
+            const cumulativeCredits = prevTotalCredits + semTotalCredits;
+            const newCgpa = cumulativeGpXCh / cumulativeCredits;
+
+            return {
+                semGpa,
+                newCgpa,
+                prevTotalCredits,
+                prevTotalGpXCh,
+                semTotalCredits,
+                highestCreditCourse
+            };
+        }
+
+        // Event listener for the main calculate button
+        calculateBtn.addEventListener('click', () => {
+            const result = performCalculations();
+
+            if (result.error) {
+                showMessage("Input Error", result.error);
+                return;
+            }
+            
+            semGpaResult.textContent = result.semGpa.toFixed(2);
+            cgpaResult.textContent = result.newCgpa.toFixed(2);
+            
+            // Calculate required semester GPA for target
+            const targetCgpa = parseFloat(targetCgpaInput.value);
+            if (!isNaN(targetCgpa)) {
+                if (result.prevTotalCredits === 0) {
+                    requiredGpaResult.textContent = 'N/A';
+                    insightsText.textContent = "To set a target, you must enter at least one past semester's data. Your target CGPA is equal to the GPA you need this semester.";
+                } else {
+                    const requiredTotalGpXCh = targetCgpa * (result.prevTotalCredits + result.semTotalCredits);
+                    const requiredSemGpXCh = requiredTotalGpXCh - result.prevTotalGpXCh;
+                    const requiredGpa = requiredSemGpXCh / result.semTotalCredits;
+
+                    if (requiredGpa > 4.0 || requiredGpa < 0) {
+                        if (result.newCgpa >= targetCgpa) {
+                            requiredGpaResult.textContent = 'Achieved!';
+                            insightsText.textContent = `Congratulations! 🎉 Your current grades already exceed your target CGPA of ${targetCgpa.toFixed(2)}. Focus on acing your highest credit-hour courses, like '${result.highestCreditCourse.name}'.`;
+                        } else {
+                            requiredGpaResult.textContent = 'Impossible';
+                            insightsText.textContent = `Based on your current credit hours, it is mathematically impossible to reach your target CGPA of ${targetCgpa.toFixed(2)}. However, you can still improve your CGPA by performing well in your high-credit courses like '${result.highestCreditCourse.name}'.`;
+                        }
+                    } else {
+                        requiredGpaResult.textContent = requiredGpa.toFixed(2);
+                        insightsText.textContent = `To achieve your target CGPA of ${targetCgpa.toFixed(2)}, you must have a semester GPA of at least ${requiredGpa.toFixed(2)}. Focus your efforts on your highest credit-hour courses, such as '${result.highestCreditCourse.name}'.`;
+                    }
+                }
+            } else {
+                requiredGpaResult.textContent = '--';
+                if (result.highestCreditCourse.name) {
+                    insightsText.textContent = `To significantly boost your CGPA, focus your effort on getting a great grade in '${result.highestCreditCourse.name}', as it has the highest credit hours (${result.highestCreditCourse.credits}).`;
+                } else {
+                    insightsText.textContent = `To maximize your CGPA, ensure you do well in all your courses. Every grade counts!`;
+                }
+            }
+            
+            // Generate projections
+            if (result.prevTotalCredits > 0) {
+                projectionsSection.classList.remove('hidden');
+                const futureCredits = result.semTotalCredits;
+                const calculateProjectedCgpa = (futureGpa) => {
+                    const futureGpXCh = futureGpa * futureCredits;
+                    const totalGpXCh = result.prevTotalGpXCh + futureGpXCh;
+                    const totalCredits = result.prevTotalCredits + futureCredits;
+                    return (totalGpXCh / totalCredits).toFixed(2);
+                };
+                
+                proj25Result.textContent = calculateProjectedCgpa(2.5);
+                proj30Result.textContent = calculateProjectedCgpa(3.0);
+                proj35Result.textContent = calculateProjectedCgpa(3.5);
+                proj40Result.textContent = calculateProjectedCgpa(4.0);
+            } else {
+                projectionsSection.classList.add('hidden');
+            }
+
+            resultsSection.classList.remove('hidden');
+            resultsSection.scrollIntoView({ behavior: 'smooth' });
+        });
+
+        // Event listener for the "What If" button
+        whatIfBtn.addEventListener('click', () => {
+            const result = performCalculations();
+
+            if (result.error) {
+                showMessage("Input Error", result.error);
+                return;
+            }
+
+            whatIfSemGpa.textContent = result.semGpa.toFixed(2);
+            whatIfCgpa.textContent = result.newCgpa.toFixed(2);
+            whatIfResults.classList.remove('hidden');
+            whatIfResults.scrollIntoView({ behavior: 'smooth' });
+        });
+    </script>
 </body>
 </html>
