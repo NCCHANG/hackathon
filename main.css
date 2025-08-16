@@ -41,7 +41,7 @@
     .panel{background:linear-gradient(180deg, #111522, #0e1320); border:1px solid #1a2040; border-radius:var(--radius); box-shadow:var(--shadow)}
 
     /* HOME */
-    #home .cards{display:grid; grid-template-columns: repeat(auto-fit, minmax(220px,1fr)); gap:22px}
+    #logout .cards{display:grid; grid-template-columns: repeat(auto-fit, minmax(220px,1fr)); gap:22px}
     .card-btn{display:flex; align-items:center; justify-content:center; gap:10px; height:160px; cursor:pointer; text-decoration:none; color:var(--text); font-weight:700; font-size:20px; transition:transform .15s ease, box-shadow .15s ease, background .15s ease;}
     .card-btn:hover{transform:translateY(-2px); box-shadow:0 14px 40px rgb(0 0 0 / .45)}
     .card-btn svg{width:22px; height:22px}
