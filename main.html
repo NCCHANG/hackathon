@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <link rel="stylesheet" href="main.css" />
-  <title>IaMestiMMU</title>
+  <title>InMestiMMU</title>
 </head>
 <body>
   <div class="app">
@@ -14,14 +14,14 @@
       <div class="bar">
         <div class="brand">InMestiMMU</div>
         <div class="spacer"></div>
-        <div class="crumb" id="crumb">Logout</div>
+        <div class="crumb" id="logoutBtn" onclick="logout()">Logout</div>
       </div>
     </header>
 
-    <main>
-      <!-- LOGOUT -->
+    <main>  
+      <!-- HOME -->
       <section id="logout" class="panel p16">
-        <div class="section-title">Welcome</div>
+      <div class="section-title">Welcome</div>
         <div class="cards">
           <a class="card-btn panel" onclick="go('browse')" aria-label="Go to Browse">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="7" height="7"/><rect x="14" y="4" width="7" height="7"/><rect x="14" y="13" width="7" height="7"/><rect x="3" y="13" width="7" height="7"/></svg>
@@ -215,6 +215,11 @@
       localStorage.setItem(LS_KEY, JSON.stringify(subjects));
       (e.target).reset(); fileName.textContent='';
       go('browse'); runSearch();
+    }
+    function logout() {
+      localStorage.clear();   // clear stored session data
+      window.location.href = "login.html";             // go back to login page
+      alert("You have been logged out."); // optional
     }
 
     // load default view
