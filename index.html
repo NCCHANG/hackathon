@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Cloud CGPA Calculator</title>
+
+  <!-- Fonts + Tailwind -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Your styles -->
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body class="bg-gray-100 p-4 sm:p-8">
+  <div class="container mx-auto bg-white p-6 sm:p-8 rounded-2xl shadow-xl space-y-8">
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-gray-900 text-center tracking-tight mb-4">
+      Cloud CGPA Calculator
+    </h1>
+    <p class="text-center text-gray-600 mb-8 max-w-lg mx-auto">
+      This version uses a cloud database to save your data automatically across sessions and devices.
+    </p>
+
+    <!-- Auth Section -->
+    <div id="auth-section" class="space-y-4">
+      <h2 class="text-2xl font-bold text-gray-800 text-center">Login to Save Your Data</h2>
+
+      <div class="space-y-4 max-w-sm mx-auto p-6 bg-gray-50 rounded-lg shadow-inner">
+        <div>
+          <label for="email-input" class="block text-sm font-medium text-gray-700">Email</label>
+          <input id="email-input" type="email" placeholder="you@example.com"
+                 class="mt-1 w-full p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
+        </div>
+        <div>
+          <label for="password-input" class="block text-sm font-medium text-gray-700">Password</label>
+          <input id="password-input" type="password" placeholder="••••••••"
+                 class="mt-1 w-full p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
+        </div>
+
+        <div class="flex flex-col sm:flex-row gap-3">
+          <button id="signup-btn"
+                  class="flex-1 py-3 px-4 bg-blue-600 text-white font-semibold rounded-lg shadow-md hover:bg-blue-700">
+            Sign Up
+          </button>
+          <button id="login-btn"
+                  class="flex-1 py-3 px-4 bg-green-600 text-white font-semibold rounded-lg shadow-md hover:bg-green-700">
+            Log In
+          </button>
+        </div>
+
+        <!-- Continue as Guest -->
+        <button id="guest-btn"
+                class="w-full py-3 px-4 bg-gray-800 text-white font-semibold rounded-lg shadow-md hover:bg-gray-900">
+          Continue as Guest
+        </button>
+      </div>
+
+      <p id="auth-status" class="text-center text-sm font-medium text-gray-600"></p>
+    </div>
+
+    <!-- Main Calculator UI -->
+    <div id="calculator-ui" class="hidden space-y-8">
+      <!-- User info / logout -->
+      <div class="flex flex-col sm:flex-row items-center justify-between bg-gray-50 p-4 rounded-xl shadow-inner border border-gray-200">
+        <span id="user-info" class="text-gray-600 text-sm font-medium mb-2 sm:mb-0">Welcome!</span>
+        <button id="logout-btn"
+                class="py-2 px-4 bg-red-600 text-white font-semibold rounded-lg shadow-sm hover:bg-red-700">
+          Log Out
+        </button>
+      </div>
+
+      <!-- AI: Auto-Fill Past Trimesters (text-based) -->
+      <div class="bg-indigo-50 p-6 rounded-xl shadow-inner border border-indigo-200">
+        <h2 class="text-xl font-bold text-indigo-800 mb-2">AI: Auto-Fill Past Trimesters</h2>
+        <p class="text-sm text-indigo-700 mb-4">
+          Paste your transcript text. We’ll detect your <strong>last 12 months</strong> of trimester/semester summaries (GPA &amp; credits)
+          and add them to “Past Semesters”.
+        </p>
+        <textarea id="past-tri-text" rows="4" placeholder="Paste transcript summary sections here…"
+                  class="w-full p-3 border border-indigo-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500"></textarea>
+        <div class="flex items-center gap-3 mt-3">
+          <button id="extract-tri-btn"
+                  class="py-2.5 px-5 bg-indigo-600 text-white font-semibold rounded-lg shadow-md hover:bg-indigo-700">
+            Extract Past Trimesters
+          </button>
+          <span id="extract-tri-status" class="text-sm text-indigo-700"></span>
+        </div>
+      </div>
+
+      <!-- Past Semesters -->
+      <div class="bg-gray-50 p-6 rounded-xl shadow-inner border border-gray-200">
+        <h2 class="text-xl font-bold text-gray-800 mb-4">Past Semesters</h2>
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-2 font-bold text-gray-700">
+          <div class="col-span-2 sm:col-span-1">Semester Name</div>
+          <div class="col-span-1 sm:col-span-1">GPA</div>
+          <div class="col-span-1 sm:col-span-1">Credits</div>
+          <div class="col-span-1 sm:col-span-1"></div>
+        </div>
+        <div id="past-semesters-container" class="space-y-4"></div>
+        <button id="add-semester-btn"
+                class="mt-6 w-full py-3 px-4 bg-gray-200 text-gray-700 font-semibold rounded-lg hover:bg-gray-300">
+          + Add A Past Semester
+        </button>
+      </div>
+
+      <!-- Current Semester Courses -->
+      <div class="bg-white p-6 rounded-xl shadow-lg border border-gray-200">
+        <h2 class="text-xl font-bold text-gray-800 mb-4">Current Semester Courses</h2>
+        <div class="grid grid-cols-3 sm:grid-cols-4 gap-4 mb-2 font-bold text-gray-700">
+          <div class="col-span-2 sm:col-span-1">Course Name</div>
+          <div class="col-span-1 sm:col-span-1">Credits</div>
+          <div class="col-span-2 sm:col-span-1">Grade</div>
+          <div class="col-span-1 sm:col-span-1"></div>
+        </div>
+        <div id="courses-container" class="space-y-4"></div>
+        <button id="add-course-btn"
+                class="mt-6 w-full py-3 px-4 bg-gray-200 text-gray-700 font-semibold rounded-lg hover:bg-gray-300">
+          + Add Another Course
+        </button>
+      </div>
+
+      <!-- What If -->
+      <div class="bg-blue-50 p-6 rounded-2xl shadow-inner border border-blue-200">
+        <h2 class="text-xl font-bold text-blue-800 mb-4">What If Scenario Planner</h2>
+        <p class="text-sm text-blue-700 mb-4">Play with different grades for your current courses to see the impact.</p>
+        <button id="what-if-btn"
+                class="w-full py-3 px-4 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700">
+          Calculate "What If" Scenario
+        </button>
+        <div id="what-if-results" class="hidden mt-4 bg-white p-4 rounded-xl shadow-md space-y-2">
+          <p class="text-sm font-medium text-gray-500">Hypothetical Semester GPA:</p>
+          <p id="what-if-sem-gpa" class="text-2xl font-extrabold text-blue-600">--</p>
+          <p class="text-sm font-medium text-gray-500">Hypothetical New CGPA:</p>
+          <p id="what-if-cgpa" class="text-2xl font-extrabold text-blue-600">--</p>
+        </div>
+      </div>
+
+      <!-- Target CGPA -->
+      <div class="bg-gray-50 p-6 rounded-xl shadow-inner border border-gray-200">
+        <h2 class="text-xl font-bold text-gray-800 mb-4">Set a Goal</h2>
+        <label for="target-cgpa" class="block text-sm font-medium text-gray-700 mb-1">Target CGPA</label>
+        <input id="target-cgpa" type="number" placeholder="e.g., 3.80" step="0.01"
+               class="w-full p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
+      </div>
+
+      <!-- Buttons -->
+      <div class="pt-6 border-t border-gray-200">
+        <div class="flex flex-col sm:flex-row gap-4">
+          <button id="calculate-btn"
+                  class="flex-1 py-4 px-6 bg-blue-600 text-white font-bold rounded-xl shadow-lg hover:bg-blue-700">
+            Calculate CGPA & Strategy
+          </button>
+          <button id="save-btn"
+                  class="flex-1 py-4 px-6 bg-green-600 text-white font-bold rounded-xl shadow-lg hover:bg-green-700">
+            Save to Cloud
+          </button>
+          <button id="clear-btn"
+                  class="flex-1 py-4 px-6 bg-red-600 text-white font-bold rounded-xl shadow-lg hover:bg-red-700">
+            Clear All
+          </button>
+        </div>
+      </div>
+
+      <!-- Results -->
+      <div id="results-section" class="hidden bg-white p-6 rounded-2xl shadow-xl border border-blue-200 space-y-6">
+        <h2 class="text-2xl font-bold text-blue-700 text-center">Results &amp; Insights</h2>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-6 text-center">
+          <div class="bg-blue-50 p-4 rounded-xl border border-blue-100">
+            <p class="text-sm font-medium text-blue-500">Your Semester GPA</p>
+            <p id="sem-gpa-result" class="text-4xl font-extrabold text-blue-600 mt-1">--</p>
+          </div>
+          <div class="bg-blue-50 p-4 rounded-xl border border-blue-100">
+            <p class="text-sm font-medium text-blue-500">Your New CGPA</p>
+            <p id="cgpa-result" class="text-4xl font-extrabold text-blue-600 mt-1">--</p>
+          </div>
+          <div class="bg-blue-50 p-4 rounded-xl border border-blue-100">
+            <p class="text-sm font-medium text-blue-500">Required Semester GPA</p>
+            <p id="required-gpa-result" class="text-4xl font-extrabold text-blue-600 mt-1">--</p>
+          </div>
+        </div>
+
+        <div class="bg-yellow-50 p-6 rounded-xl border border-yellow-200">
+          <h3 class="flex items-center text-lg font-bold text-yellow-800 mb-2">
+            <svg class="h-6 w-6 mr-2 text-yellow-600" fill="currentColor" viewBox="0 0 20 20">
+              <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/>
+            </svg>
+            Strategic Advice
+          </h3>
+          <p id="insights-text" class="text-yellow-700 leading-relaxed">
+            Based on your inputs, this is where you should focus your efforts.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Message Box -->
+    <div id="message-box" class="fixed inset-0 bg-gray-600 bg-opacity-75 hidden items-center justify-center p-4">
+      <div class="bg-white p-8 rounded-xl shadow-2xl max-w-sm w-full text-center space-y-4">
+        <h3 id="message-title" class="text-xl font-bold text-gray-800"></h3>
+        <p id="message-content" class="text-gray-600"></p>
+        <div class="flex justify-center">
+          <button id="message-close-btn"
+                  class="mt-4 px-6 py-2 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scripts (order matters) -->
+  <script type="module" src="firebase.js"></script>
+  <script type="module" src="calculator.js"></script>
+  <script type="module" src="ai.js"></script>
+  <script type="module" src="application.js"></script>
+</body>
+</html>
