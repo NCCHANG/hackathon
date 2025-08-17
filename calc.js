@@ -68,3 +68,23 @@ export function performCalculations() {
         highestCreditCourse
     };
 }
+
+export function calculatePrevSemestersCGPA() {
+    let prevTotalGpXCh = 0;
+    let prevTotalCredits = 0;
+    const semesterRows = document.querySelectorAll('.semester-row');
+    for (const row of semesterRows) {
+        const gpa = parseFloat(row.querySelector('.sem-gpa').value);
+        const credits = parseFloat(row.querySelector('.sem-credits').value);
+        if (isNaN(gpa) || isNaN(credits) || credits <= 0) {
+            return { error: "Please ensure all past semester fields have a valid GPA and Credits." };
+        }
+        prevTotalGpXCh += gpa * credits;
+        prevTotalCredits += credits;
+    }
+    if (prevTotalCredits === 0) {
+        return { error: "No past semesters entered." };
+    }
+    const cgpa = prevTotalGpXCh / prevTotalCredits;
+    return { cgpa };
+}

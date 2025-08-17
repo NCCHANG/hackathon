@@ -1,7 +1,7 @@
 import { selectors, showMessage, clearAllInputs, createSemesterRow, createCourseRow } from './ui.js';
 import { saveData } from './data.js';
 import { setupAuth, userId, appId } from './auth.js';
-import { performCalculations } from './calc.js';
+import { performCalculations, calculatePrevSemestersCGPA } from './calc.js';
 import { db } from './firebase.js';
 
 // Setup authentication listeners
@@ -195,4 +195,18 @@ selectors.whatIfBtn.addEventListener('click', () => {
     selectors.whatIfCgpa.textContent = result.newCgpa.toFixed(2);
     selectors.whatIfResults.classList.remove('hidden');
     selectors.whatIfResults.scrollIntoView({ behavior: 'smooth' });
+});
+
+document.getElementById('calc-prev-cgpa-btn').addEventListener('click', () => {
+    const result = calculatePrevSemestersCGPA();
+    const resultDiv = document.getElementById('prev-cgpa-result');
+    if (result.error) {
+        resultDiv.textContent = result.error;
+        resultDiv.classList.remove('text-blue-700');
+        resultDiv.classList.add('text-red-600');
+    } else {
+        resultDiv.textContent = `CGPA for Past Semesters: ${result.cgpa.toFixed(2)}`;
+        resultDiv.classList.remove('text-red-600');
+        resultDiv.classList.add('text-blue-700');
+    }
 });
