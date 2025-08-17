@@ -37,7 +37,15 @@
                   class="flex-1 py-3 px-4 bg-green-600 text-white font-semibold rounded-lg shadow-md hover:bg-green-700 transition duration-150 transform hover:scale-105">
             Log In
           </button>
+          <!-- NEW: Continue as Guest -->
+          <button id="guest-btn"
+                  class="flex-1 py-3 px-4 bg-gray-700 text-white font-semibold rounded-lg shadow-md hover:bg-gray-800 transition duration-150 transform hover:scale-105">
+            Continue as Guest
+          </button>
         </div>
+        <p class="text-xs text-gray-500 text-center">
+          In guest mode your data stays in this browser only and won’t be saved to the cloud.
+        </p>
       </div>
       <p id="auth-status" class="text-center text-sm font-medium text-gray-600"></p>
     </div>
@@ -218,304 +226,344 @@
 
   <!-- Firebase SDKs -->
   <script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-  import { getAuth, onAuthStateChanged, signOut, signInWithEmailAndPassword, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-  import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+    import { getAuth, onAuthStateChanged, signOut, signInWithEmailAndPassword, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+    import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-  // Firebase config
-  const firebaseConfig = {
-    apiKey: "AIzaSyBqe2vF4mmXbAjuWIcV_zCfc7hgzTFKSNQ",
-    authDomain: "cgpacalculator-44f45.firebaseapp.com",
-    projectId: "cgpacalculator-44f45",
-    storageBucket: "cgpacalculator-44f45.firebasestorage.app",
-    messagingSenderId: "976052597181",
-    appId: "1:976052597181:web:6147fa61a823a4f0c062d4",
-    measurementId: "G-5LGEGPHLED"
-  };
-  const appId = firebaseConfig.projectId;
+    // Firebase config
+    const firebaseConfig = {
+      apiKey: "AIzaSyBqe2vF4mmXbAjuWIcV_zCfc7hgzTFKSNQ",
+      authDomain: "cgpacalculator-44f45.firebaseapp.com",
+      projectId: "cgpacalculator-44f45",
+      storageBucket: "cgpacalculator-44f45.firebasestorage.app",
+      messagingSenderId: "976052597181",
+      appId: "1:976052597181:web:6147fa61a823a4f0c062d4",
+      measurementId: "G-5LGEGPHLED"
+    };
+    const appId = firebaseConfig.projectId;
 
-  let db, auth, userId;
-  const app = initializeApp(firebaseConfig);
-  db = getFirestore(app);
-  auth = getAuth(app);
+    let db, auth, userId;
+    let guestMode = false; // NEW: track guest mode
 
-  // UI refs
-  const authSection = document.getElementById('auth-section');
-  const emailInput = document.getElementById('email-input');
-  const passwordInput = document.getElementById('password-input');
-  const signupBtn = document.getElementById('signup-btn');
-  const loginBtn = document.getElementById('login-btn');
-  const authStatus = document.getElementById('auth-status');
-  const calculatorUi = document.getElementById('calculator-ui');
-  const userInfoSpan = document.getElementById('user-info');
-  const logoutBtn = document.getElementById('logout-btn');
+    const app = initializeApp(firebaseConfig);
+    db = getFirestore(app);
+    auth = getAuth(app);
 
-  // NEW AI (past trimesters)
-  const pastTriText = document.getElementById('past-tri-text');
-  const extractTriBtn = document.getElementById('extract-tri-btn');
-  const extractTriStatus = document.getElementById('extract-tri-status');
+    // UI refs
+    const authSection = document.getElementById('auth-section');
+    const emailInput = document.getElementById('email-input');
+    const passwordInput = document.getElementById('password-input');
+    const signupBtn = document.getElementById('signup-btn');
+    const loginBtn = document.getElementById('login-btn');
+    const guestBtn = document.getElementById('guest-btn'); // NEW
+    const authStatus = document.getElementById('auth-status');
+    const calculatorUi = document.getElementById('calculator-ui');
+    const userInfoSpan = document.getElementById('user-info');
+    const logoutBtn = document.getElementById('logout-btn');
 
-  // (Removed UI) – keep guards so code won’t crash if elements don’t exist
-  const parseTranscriptBtn = document.getElementById('parse-transcript-btn');
-  const transcriptText   = document.getElementById('transcript-text');
-  const parseSpinner     = document.getElementById('parse-spinner');
-  const parseText        = document.getElementById('parse-text');
+    // New AI (past trimesters)
+    const pastTriText = document.getElementById('past-tri-text');
+    const extractTriBtn = document.getElementById('extract-tri-btn');
+    const extractTriStatus = document.getElementById('extract-tri-status');
 
-  // Containers
-  const pastSemestersContainer = document.getElementById('past-semesters-container');
-  const addSemesterBtn = document.getElementById('add-semester-btn');
-  const coursesContainer = document.getElementById('courses-container');
-  const addCourseBtn = document.getElementById('add-course-btn');
+    // (Optional/guarded) Original AI (courses) – UI may not exist in your version
+    const parseTranscriptBtn = document.getElementById('parse-transcript-btn');
+    const transcriptText = document.getElementById('transcript-text');
+    const parseSpinner = document.getElementById('parse-spinner');
+    const parseText = document.getElementById('parse-text');
 
-  const targetCgpaInput = document.getElementById('target-cgpa');
-  const calculateBtn = document.getElementById('calculate-btn');
-  const saveBtn = document.getElementById('save-btn');
-  const clearBtn = document.getElementById('clear-btn');
-  const whatIfBtn = document.getElementById('what-if-btn');
-  const whatIfResults = document.getElementById('what-if-results');
-  const whatIfSemGpa = document.getElementById('what-if-sem-gpa');
-  const whatIfCgpa = document.getElementById('what-if-cgpa');
+    // Common containers
+    const pastSemestersContainer = document.getElementById('past-semesters-container');
+    const addSemesterBtn = document.getElementById('add-semester-btn');
+    const coursesContainer = document.getElementById('courses-container');
+    const addCourseBtn = document.getElementById('add-course-btn');
 
-  const resultsSection = document.getElementById('results-section');
-  const semGpaResult = document.getElementById('sem-gpa-result');
-  const cgpaResult = document.getElementById('cgpa-result');
-  const requiredGpaResult = document.getElementById('required-gpa-result');
-  const insightsText = document.getElementById('insights-text');
-  const projectionsSection = document.getElementById('projections-section');
-  const proj25Result = document.getElementById('proj-25-result');
-  const proj30Result = document.getElementById('proj-30-result');
-  const proj35Result = document.getElementById('proj-35-result');
-  const proj40Result = document.getElementById('proj-40-result');
+    const targetCgpaInput = document.getElementById('target-cgpa');
+    const calculateBtn = document.getElementById('calculate-btn');
+    const saveBtn = document.getElementById('save-btn');
+    const clearBtn = document.getElementById('clear-btn');
+    const whatIfBtn = document.getElementById('what-if-btn');
+    const whatIfResults = document.getElementById('what-if-results');
+    const whatIfSemGpa = document.getElementById('what-if-sem-gpa');
+    const whatIfCgpa = document.getElementById('what-if-cgpa');
 
-  const messageBox = document.getElementById('message-box');
-  const messageTitle = document.getElementById('message-title');
-  const messageContent = document.getElementById('message-content');
-  const messageCloseBtn = document.getElementById('message-close-btn');
+    const resultsSection = document.getElementById('results-section');
+    const semGpaResult = document.getElementById('sem-gpa-result');
+    const cgpaResult = document.getElementById('cgpa-result');
+    const requiredGpaResult = document.getElementById('required-gpa-result');
+    const insightsText = document.getElementById('insights-text');
+    const projectionsSection = document.getElementById('projections-section');
+    const proj25Result = document.getElementById('proj-25-result');
+    const proj30Result = document.getElementById('proj-30-result');
+    const proj35Result = document.getElementById('proj-35-result');
+    const proj40Result = document.getElementById('proj-40-result');
 
-  // Message box
-  function showMessage(title, content) {
-    messageTitle.textContent = title;
-    messageContent.textContent = content;
-    messageBox.classList.remove('hidden');
-    messageBox.classList.add('flex');
-  }
-  messageCloseBtn.addEventListener('click', () => {
-    messageBox.classList.remove('flex');
-    messageBox.classList.add('hidden');
-  });
+    const messageBox = document.getElementById('message-box');
+    const messageTitle = document.getElementById('message-title');
+    const messageContent = document.getElementById('message-content');
+    const messageCloseBtn = document.getElementById('message-close-btn');
 
-  // Row helpers
-  function createSemesterRow(semName = '', semGpa = '', semCredits = '') {
-    const row = document.createElement('div');
-    row.className = 'semester-row grid grid-cols-2 sm:grid-cols-4 gap-4 items-center bg-gray-100 p-4 rounded-lg border border-gray-200';
-    row.innerHTML = `
-      <div class="col-span-2 sm:col-span-1">
-        <input type="text" placeholder="Semester Name" value="${semName}" class="sem-name w-full p-2 border border-gray-300 rounded-lg">
-      </div>
-      <div class="col-span-1 sm:col-span-1">
-        <input type="number" placeholder="GPA" value="${semGpa}" step="0.01" class="sem-gpa w-full p-2 border border-gray-300 rounded-lg">
-      </div>
-      <div class="col-span-1 sm:col-span-1">
-        <input type="number" placeholder="Credits" value="${semCredits}" step="1" class="sem-credits w-full p-2 border border-gray-300 rounded-lg">
-      </div>
-      <div class="col-span-1 sm:col-span-1 flex justify-end">
-        <button class="remove-semester-btn p-2 text-gray-400 hover:text-red-500 transition-colors duration-150">
-          <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm6 0a1 1 0 112 0v6a1 1 0 11-2 0V8z" clip-rule="evenodd"/></svg>
-        </button>
-      </div>
-    `;
-    pastSemestersContainer.appendChild(row);
-    row.querySelector('.remove-semester-btn').addEventListener('click', () => {
-      pastSemestersContainer.removeChild(row);
+    // Message box
+    function showMessage(title, content) {
+      messageTitle.textContent = title;
+      messageContent.textContent = content;
+      messageBox.classList.remove('hidden');
+      messageBox.classList.add('flex');
+    }
+    messageCloseBtn.addEventListener('click', () => {
+      messageBox.classList.remove('flex');
+      messageBox.classList.add('hidden');
     });
-  }
 
-  function createCourseRow(courseName = '', creditHours = '', grade = '') {
-    const row = document.createElement('div');
-    row.className = 'course-row grid grid-cols-3 sm:grid-cols-4 gap-4 items-center';
-    row.innerHTML = `
-      <div class="col-span-2 sm:col-span-1">
-        <input type="text" placeholder="Course Name" value="${courseName}" class="course-name w-full p-3 border border-gray-300 rounded-lg">
-      </div>
-      <div class="col-span-1 sm:col-span-1">
-        <input type="number" placeholder="Credits" value="${creditHours}" step="1" class="credit-hours w-full p-3 border border-gray-300 rounded-lg">
-      </div>
-      <div class="col-span-2 sm:col-span-1">
-        <select class="grade-input w-full p-3 border border-gray-300 rounded-lg">
-          <option value="" disabled selected>Select Grade</option>
-          <option value="A+">A+</option><option value="A">A</option><option value="A-">A-</option>
-          <option value="B+">B+</option><option value="B">B</option><option value="B-">B-</option>
-          <option value="C+">C+</option><option value="C">C</option><option value="C-">C-</option>
-          <option value="D+">D+</option><option value="D">D</option>
-          <option value="F">F</option>
-        </select>
-      </div>
-      <div class="col-span-1 sm:col-span-1 flex justify-end">
-        <button class="remove-course-btn p-2 text-gray-400 hover:text-red-500 transition-colors duration-150">
-          <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm6 0a1 1 0 112 0v6a1 1 0 11-2 0V8z" clip-rule="evenodd"/></svg>
-        </button>
-      </div>
-    `;
-    coursesContainer.appendChild(row);
-    row.querySelector('.remove-course-btn').addEventListener('click', () => {
-      coursesContainer.removeChild(row);
+    // Row helpers
+    function createSemesterRow(semName = '', semGpa = '', semCredits = '') {
+      const row = document.createElement('div');
+      row.className = 'semester-row grid grid-cols-2 sm:grid-cols-4 gap-4 items-center bg-gray-100 p-4 rounded-lg border border-gray-200';
+      row.innerHTML = `
+        <div class="col-span-2 sm:col-span-1">
+          <input type="text" placeholder="Semester Name" value="${semName}" class="sem-name w-full p-2 border border-gray-300 rounded-lg">
+        </div>
+        <div class="col-span-1 sm:col-span-1">
+          <input type="number" placeholder="GPA" value="${semGpa}" step="0.01" class="sem-gpa w-full p-2 border border-gray-300 rounded-lg">
+        </div>
+        <div class="col-span-1 sm:col-span-1">
+          <input type="number" placeholder="Credits" value="${semCredits}" step="1" class="sem-credits w-full p-2 border border-gray-300 rounded-lg">
+        </div>
+        <div class="col-span-1 sm:col-span-1 flex justify-end">
+          <button class="remove-semester-btn p-2 text-gray-400 hover:text-red-500 transition-colors duration-150">
+            <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm6 0a1 1 0 112 0v6a1 1 0 11-2 0V8z" clip-rule="evenodd"/></svg>
+          </button>
+        </div>
+      `;
+      pastSemestersContainer.appendChild(row);
+      row.querySelector('.remove-semester-btn').addEventListener('click', () => {
+        pastSemestersContainer.removeChild(row);
+      });
+    }
+
+    function createCourseRow(courseName = '', creditHours = '', grade = '') {
+      const row = document.createElement('div');
+      row.className = 'course-row grid grid-cols-3 sm:grid-cols-4 gap-4 items-center';
+      row.innerHTML = `
+        <div class="col-span-2 sm:col-span-1">
+          <input type="text" placeholder="Course Name" value="${courseName}" class="course-name w-full p-3 border border-gray-300 rounded-lg">
+        </div>
+        <div class="col-span-1 sm:col-span-1">
+          <input type="number" placeholder="Credits" value="${creditHours}" step="1" class="credit-hours w-full p-3 border border-gray-300 rounded-lg">
+        </div>
+        <div class="col-span-2 sm:col-span-1">
+          <select class="grade-input w-full p-3 border border-gray-300 rounded-lg">
+            <option value="" disabled selected>Select Grade</option>
+            <option value="A+">A+</option><option value="A">A</option><option value="A-">A-</option>
+            <option value="B+">B+</option><option value="B">B</option><option value="B-">B-</option>
+            <option value="C+">C+</option><option value="C">C</option><option value="C-">C-</option>
+            <option value="D+">D+</option><option value="D">D</option>
+            <option value="F">F</option>
+          </select>
+        </div>
+        <div class="col-span-1 sm:col-span-1 flex justify-end">
+          <button class="remove-course-btn p-2 text-gray-400 hover:text-red-500 transition-colors duration-150">
+            <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm6 0a1 1 0 112 0v6a1 1 0 11-2 0V8z" clip-rule="evenodd"/></svg>
+          </button>
+        </div>
+      `;
+      coursesContainer.appendChild(row);
+      row.querySelector('.remove-course-btn').addEventListener('click', () => {
+        coursesContainer.removeChild(row);
+      });
+    }
+
+    // Auth flow (respects guest mode)
+    onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        // Logged-in user
+        guestMode = false; // leaving guest mode
+        userId = user.uid;
+        userInfoSpan.textContent = `You are logged in with ID: ${userId}`;
+        authSection.classList.add('hidden');
+        calculatorUi.classList.remove('hidden');
+        listenForData();
+      } else {
+        // Not logged in
+        userId = null;
+        if (guestMode) {
+          // Stay in app as guest
+          userInfoSpan.textContent = 'Guest mode — changes are not saved to the cloud';
+          authSection.classList.add('hidden');
+          calculatorUi.classList.remove('hidden');
+        } else {
+          authSection.classList.remove('hidden');
+          calculatorUi.classList.add('hidden');
+          showMessage("Signed Out", "You have been signed out. Please log in to access your data.");
+        }
+      }
     });
-  }
 
-  // Auth flow
-  onAuthStateChanged(auth, async (user) => {
-    if (user) {
-      userId = user.uid;
-      userInfoSpan.textContent = `You are logged in with ID: ${userId}`;
+    // NEW: Continue as Guest
+    guestBtn.addEventListener('click', () => {
+      guestMode = true;
+      userId = null;
+      userInfoSpan.textContent = 'Guest mode — changes are not saved to the cloud';
       authSection.classList.add('hidden');
       calculatorUi.classList.remove('hidden');
-      listenForData();
-    } else {
-      userId = null;
-      authSection.classList.remove('hidden');
-      calculatorUi.classList.add('hidden');
-      showMessage("Signed Out", "You have been signed out. Please log in to access your data.");
-    }
-  });
-
-  signupBtn.addEventListener('click', async () => {
-    const email = emailInput.value;
-    const password = passwordInput.value;
-    if (!email || !password) { authStatus.textContent = "Please enter both email and password."; return; }
-    try {
-      await createUserWithEmailAndPassword(auth, email, password);
-      authStatus.textContent = "Successfully created account! You are now logged in.";
-      showMessage("Success!", "Account created. You are now logged in.");
-    } catch (error) {
-      console.error("Sign up failed:", error);
-      authStatus.textContent = `Sign up failed: ${error.message}`;
-      showMessage("Sign Up Failed", error.message);
-    }
-  });
-
-  loginBtn.addEventListener('click', async () => {
-    const email = emailInput.value;
-    const password = passwordInput.value;
-    if (!email || !password) { authStatus.textContent = "Please enter both email and password."; return; }
-    try {
-      await signInWithEmailAndPassword(auth, email, password);
-      authStatus.textContent = "Successfully logged in!";
-      showMessage("Success!", "You have been logged in.");
-    } catch (error) {
-      console.error("Login failed:", error);
-      authStatus.textContent = `Login failed: ${error.message}`;
-      showMessage("Login Failed", error.message);
-    }
-  });
-
-  logoutBtn.addEventListener('click', () => { signOut(auth); });
-
-  const listenForData = () => {
-    const docRef = doc(db, 'artifacts', appId, 'users', userId, 'cgpaData', 'myCgpaData');
-    onSnapshot(docRef, (docSnap) => {
-      if (docSnap.exists()) {
-        loadData(docSnap.data());
-        showMessage("Data Loaded", "Your data has been loaded from the cloud.");
-      } else {
-        showMessage("Welcome!", "No saved data found. Start by adding your past semesters and courses.");
-        loadData({ semesters: [], courses: [] });
-      }
-    }, (error) => {
-      console.error("Error getting document:", error);
-      showMessage("Database Error", "Failed to load data from the cloud. Please check your connection.");
-    });
-  };
-
-  // Save/Load helpers
-  async function saveData() {
-    if (!userId) { showMessage("Authentication Required", "Please log in before saving your data."); return; }
-    const data = { targetCgpa: targetCgpaInput.value, semesters: [], courses: [] };
-
-    document.querySelectorAll('.semester-row').forEach(row => {
-      data.semesters.push({
-        name: row.querySelector('.sem-name').value,
-        gpa: row.querySelector('.sem-gpa').value,
-        credits: row.querySelector('.sem-credits').value
-      });
     });
 
-    document.querySelectorAll('.course-row').forEach(row => {
-      data.courses.push({
-        name: row.querySelector('.course-name').value,
-        credits: row.querySelector('.credit-hours').value,
-        grade: row.querySelector('.grade-input').value
-      });
-    });
-
-    const docRef = doc(db, 'artifacts', appId, 'users', userId, 'cgpaData', 'myCgpaData');
-    try {
-      await setDoc(docRef, data);
-      showMessage("Save Successful", "Your data has been saved to the cloud!");
-    } catch (e) {
-      console.error("Error adding document: ", e);
-      showMessage("Save Failed", "Could not save your data. Please check your connection.");
-    }
-  }
-
-  function loadData(data) {
-    targetCgpaInput.value = '';
-    pastSemestersContainer.innerHTML = '';
-    coursesContainer.innerHTML = '';
-    if (pastTriText) pastTriText.value = '';
-    if (transcriptText) transcriptText.value = '';
-    resultsSection.classList.add('hidden');
-    projectionsSection.classList.add('hidden');
-    whatIfResults.classList.add('hidden');
-
-    targetCgpaInput.value = data.targetCgpa || '';
-    if (data.semesters?.length) {
-      data.semesters.forEach(sem => createSemesterRow(sem.name, sem.gpa, sem.credits));
-    } else {
-      createSemesterRow();
-    }
-    if (data.courses?.length) {
-      data.courses.forEach(c => createCourseRow(c.name, c.credits, c.grade));
-    } else {
-      createCourseRow();
-    }
-  }
-
-  // Buttons
-  addSemesterBtn.addEventListener('click', () => createSemesterRow());
-  addCourseBtn.addEventListener('click', () => createCourseRow());
-  saveBtn.addEventListener('click', saveData);
-  clearBtn.addEventListener('click', () => {
-    pastSemestersContainer.innerHTML = '';
-    coursesContainer.innerHTML = '';
-    targetCgpaInput.value = '';
-    if (transcriptText) transcriptText.value = '';
-    if (pastTriText) pastTriText.value = '';
-    resultsSection.classList.add('hidden');
-    projectionsSection.classList.add('hidden');
-    whatIfResults.classList.add('hidden');
-  });
-
-  // Grade map
-  const gradePoints = {
-    'A+': 4.0, 'A': 4.0, 'A-': 3.7,
-    'B+': 3.3, 'B': 3.0, 'B-': 2.7,
-    'C+': 2.3, 'C': 2.0, 'C-': 1.7,
-    'D+': 1.3, 'D': 1.0,
-    'F': 0.0
-  };
-
-  // (GUARDED) ORIGINAL AI PARSER (courses) – only wire up if the UI exists
-  if (parseTranscriptBtn) {
-    parseTranscriptBtn.addEventListener('click', async () => {
-      const text = (transcriptText?.value || '').trim();
-      if (!text) { showMessage("Input Required", "Please paste your transcript text into the box first."); return; }
-
-      parseTranscriptBtn.disabled = true;
-      if (parseSpinner) parseSpinner.classList.remove('hidden');
-      if (parseText) parseText.textContent = 'Parsing...';
-
+    // Signup/Login
+    signupBtn.addEventListener('click', async () => {
+      const email = emailInput.value;
+      const password = passwordInput.value;
+      if (!email || !password) { authStatus.textContent = "Please enter both email and password."; return; }
       try {
-        const prompt = `You are a helpful assistant that extracts academic course information from raw text. The user will provide text from a university transcript or similar document. Your task is to identify and extract each course's name, credit hours, and letter grade.
+        await createUserWithEmailAndPassword(auth, email, password);
+        authStatus.textContent = "Successfully created account! You are now logged in.";
+        showMessage("Success!", "Account created. You are now logged in.");
+      } catch (error) {
+        console.error("Sign up failed:", error);
+        authStatus.textContent = `Sign up failed: ${error.message}`;
+        showMessage("Sign Up Failed", error.message);
+      }
+    });
+
+    loginBtn.addEventListener('click', async () => {
+      const email = emailInput.value;
+      const password = passwordInput.value;
+      if (!email || !password) { authStatus.textContent = "Please enter both email and password."; return; }
+      try {
+        await signInWithEmailAndPassword(auth, email, password);
+        authStatus.textContent = "Successfully logged in!";
+        showMessage("Success!", "You have been logged in.");
+      } catch (error) {
+        console.error("Login failed:", error);
+        authStatus.textContent = `Login failed: ${error.message}`;
+        showMessage("Login Failed", error.message);
+      }
+    });
+
+    // Logout (handles guest and logged-in)
+    logoutBtn.addEventListener('click', () => {
+      if (guestMode) {
+        // Exit guest mode
+        guestMode = false;
+        calculatorUi.classList.add('hidden');
+        authSection.classList.remove('hidden');
+        userInfoSpan.textContent = 'Welcome!';
+      } else {
+        signOut(auth);
+      }
+    });
+
+    const listenForData = () => {
+      const docRef = doc(db, 'artifacts', appId, 'users', userId, 'cgpaData', 'myCgpaData');
+      onSnapshot(docRef, (docSnap) => {
+        if (docSnap.exists()) {
+          loadData(docSnap.data());
+          showMessage("Data Loaded", "Your data has been loaded from the cloud.");
+        } else {
+          showMessage("Welcome!", "No saved data found. Start by adding your past semesters and courses.");
+          loadData({ semesters: [], courses: [] });
+        }
+      }, (error) => {
+        console.error("Error getting document:", error);
+        showMessage("Database Error", "Failed to load data from the cloud. Please check your connection.");
+      });
+    };
+
+    // Save/Load helpers (Save requires login)
+    async function saveData() {
+      if (!userId) {
+        showMessage("Login required", "Please log in or sign up to save to the cloud.");
+        // Reveal auth at top; keep calculator visible so data isn't lost
+        authSection.classList.remove('hidden');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        return;
+      }
+      const data = { targetCgpa: targetCgpaInput.value, semesters: [], courses: [] };
+
+      document.querySelectorAll('.semester-row').forEach(row => {
+        data.semesters.push({
+          name: row.querySelector('.sem-name').value,
+          gpa: row.querySelector('.sem-gpa').value,
+          credits: row.querySelector('.sem-credits').value
+        });
+      });
+
+      document.querySelectorAll('.course-row').forEach(row => {
+        data.courses.push({
+          name: row.querySelector('.course-name').value,
+          credits: row.querySelector('.credit-hours').value,
+          grade: row.querySelector('.grade-input').value
+        });
+      });
+
+      const docRef = doc(db, 'artifacts', appId, 'users', userId, 'cgpaData', 'myCgpaData');
+      try {
+        await setDoc(docRef, data);
+        showMessage("Save Successful", "Your data has been saved to the cloud!");
+      } catch (e) {
+        console.error("Error adding document: ", e);
+        showMessage("Save Failed", "Could not save your data. Please check your connection.");
+      }
+    }
+
+    function loadData(data) {
+      targetCgpaInput.value = '';
+      pastSemestersContainer.innerHTML = '';
+      coursesContainer.innerHTML = '';
+      if (pastTriText) pastTriText.value = '';
+      if (transcriptText) transcriptText.value = '';
+      resultsSection.classList.add('hidden');
+      projectionsSection.classList.add('hidden');
+      whatIfResults.classList.add('hidden');
+
+      targetCgpaInput.value = data.targetCgpa || '';
+      if (data.semesters?.length) {
+        data.semesters.forEach(sem => createSemesterRow(sem.name, sem.gpa, sem.credits));
+      } else {
+        createSemesterRow();
+      }
+      if (data.courses?.length) {
+        data.courses.forEach(c => createCourseRow(c.name, c.credits, c.grade));
+      } else {
+        createCourseRow();
+      }
+    }
+
+    // Buttons
+    addSemesterBtn.addEventListener('click', () => createSemesterRow());
+    addCourseBtn.addEventListener('click', () => createCourseRow());
+    saveBtn.addEventListener('click', saveData);
+    clearBtn.addEventListener('click', () => {
+      pastSemestersContainer.innerHTML = '';
+      coursesContainer.innerHTML = '';
+      targetCgpaInput.value = '';
+      if (transcriptText) transcriptText.value = '';
+      if (pastTriText) pastTriText.value = '';
+      resultsSection.classList.add('hidden');
+      projectionsSection.classList.add('hidden');
+      whatIfResults.classList.add('hidden');
+    });
+
+    // Grade map
+    const gradePoints = {
+      'A+': 4.0, 'A': 4.0, 'A-': 3.7,
+      'B+': 3.3, 'B': 3.0, 'B-': 2.7,
+      'C+': 2.3, 'C': 2.0, 'C-': 1.7,
+      'D+': 1.3, 'D': 1.0,
+      'F': 0.0
+    };
+
+    // (Guarded) Original AI Parser (courses) — only wire up if UI exists
+    if (parseTranscriptBtn) {
+      parseTranscriptBtn.addEventListener('click', async () => {
+        const text = (transcriptText?.value || '').trim();
+        if (!text) { showMessage("Input Required", "Please paste your transcript text into the box first."); return; }
+
+        parseTranscriptBtn.disabled = true;
+        if (parseSpinner) parseSpinner.classList.remove('hidden');
+        if (parseText) parseText.textContent = 'Parsing...';
+
+        try {
+          const prompt = `You are a helpful assistant that extracts academic course information from raw text. The user will provide text from a university transcript or similar document. Your task is to identify and extract each course's name, credit hours, and letter grade.
 
 Provide the extracted data as a JSON array of objects with keys: name (string), credits (number), grade (string A+/A/A-/.../F). If you cannot find a piece of information for a course, use null.
 
@@ -524,67 +572,67 @@ Now, process the following text:
 ${text}
 """`;
 
-        const chatHistory = [{ role: "user", parts: [{ text: prompt }] }];
-        const payload = {
-          contents: chatHistory,
-          generationConfig: {
-            responseMimeType: "application/json",
-            responseSchema: {
-              type: "ARRAY",
-              items: {
-                type: "OBJECT",
-                properties: {
-                  "name": { "type": "STRING" },
-                  "credits": { "type": "NUMBER" },
-                  "grade": { "type": "STRING" }
+          const chatHistory = [{ role: "user", parts: [{ text: prompt }] }];
+          const payload = {
+            contents: chatHistory,
+            generationConfig: {
+              responseMimeType: "application/json",
+              responseSchema: {
+                type: "ARRAY",
+                items: {
+                  type: "OBJECT",
+                  properties: {
+                    "name": { "type": "STRING" },
+                    "credits": { "type": "NUMBER" },
+                    "grade": { "type": "STRING" }
+                  }
                 }
               }
             }
-          }
-        };
+          };
 
-        const apiKey = "AIzaSyBB476jafxuZ0LbQaboaiEoKpB0U4bK0Co";
-        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
+          const apiKey = "AIzaSyBB476jafxuZ0LbQaboaiEoKpB0U4bK0Co";
+          const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
 
-        const response = await fetch(apiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-        if (!response.ok) throw new Error(`API call failed with status: ${response.status}`);
+          const response = await fetch(apiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+          if (!response.ok) throw new Error(`API call failed with status: ${response.status}`);
 
-        const result = await response.json();
-        const jsonString = result?.candidates?.[0]?.content?.parts?.[0]?.text;
-        if (!jsonString) throw new Error("API response was empty or malformed.");
+          const result = await response.json();
+          const jsonString = result?.candidates?.[0]?.content?.parts?.[0]?.text;
+          if (!jsonString) throw new Error("API response was empty or malformed.");
 
-        const parsedCourses = JSON.parse(jsonString);
-        if (!Array.isArray(parsedCourses)) throw new Error("Parsed data is not an array.");
+          const parsedCourses = JSON.parse(jsonString);
+          if (!Array.isArray(parsedCourses)) throw new Error("Parsed data is not an array.");
 
-        coursesContainer.innerHTML = '';
-        parsedCourses.forEach(course => {
-          if (course?.name && course?.credits != null && course?.grade) {
-            createCourseRow(course.name, course.credits, (course.grade || '').toUpperCase());
-          }
-        });
+          coursesContainer.innerHTML = '';
+          parsedCourses.forEach(course => {
+            if (course?.name && course?.credits != null && course?.grade) {
+              createCourseRow(course.name, course.credits, (course.grade || '').toUpperCase());
+            }
+          });
 
-        showMessage("Success!", "Courses have been automatically added. Please review the details.");
-      } catch (error) {
-        console.error("Parsing failed:", error);
-        showMessage("Parsing Failed", "There was an error parsing the text. Please ensure the text format is clear and try again, or enter the data manually.");
-      } finally {
-        parseTranscriptBtn.disabled = false;
-        if (parseSpinner) parseSpinner.classList.add('hidden');
-        if (parseText) parseText.textContent = 'Parse & Fill Courses';
-      }
-    });
-  }
+          showMessage("Success!", "Courses have been automatically added. Please review the details.");
+        } catch (error) {
+          console.error("Parsing failed:", error);
+          showMessage("Parsing Failed", "There was an error parsing the text. Please ensure the text format is clear and try again, or enter the data manually.");
+        } finally {
+          parseTranscriptBtn.disabled = false;
+          if (parseSpinner) parseSpinner.classList.add('hidden');
+          if (parseText) parseText.textContent = 'Parse & Fill Courses';
+        }
+      });
+    }
 
-  // NEW AI PARSER (past trimesters)
-  extractTriBtn.addEventListener('click', async () => {
-    const text = pastTriText.value.trim();
-    if (!text) { showMessage("Input Required", "Please paste transcript text first."); return; }
+    // NEW AI Parser (past trimesters)
+    extractTriBtn.addEventListener('click', async () => {
+      const text = pastTriText.value.trim();
+      if (!text) { showMessage("Input Required", "Please paste transcript text first."); return; }
 
-    extractTriBtn.disabled = true;
-    extractTriStatus.textContent = "Extracting…";
+      extractTriBtn.disabled = true;
+      extractTriStatus.textContent = "Extracting…";
 
-    try {
-      const triPrompt = `Extract past trimester/semester summaries from the transcript text.
+      try {
+        const triPrompt = `Extract past trimester/semester summaries from the transcript text.
 
 Return a JSON array. Each item MUST have:
 - "name" (string): a human-friendly label like "Trimester March/April 2024" or "Semester 2 2024/2025"
@@ -599,210 +647,212 @@ Transcript:
 ${text}
 """`;
 
-      const chatHistory = [{ role: "user", parts: [{ text: triPrompt }] }];
-      const payload = {
-        contents: chatHistory,
-        generationConfig: {
-          responseMimeType: "application/json",
-          responseSchema: {
-            type: "ARRAY",
-            items: {
-              type: "OBJECT",
-              properties: {
-                "name": { "type": "STRING" },
-                "gpa": { "type": "NUMBER" },
-                "credits": { "type": "NUMBER" },
-                "endDate": { "type": "STRING" }
+        const chatHistory = [{ role: "user", parts: [{ text: triPrompt }] }];
+        const payload = {
+          contents: chatHistory,
+          generationConfig: {
+            responseMimeType: "application/json",
+            responseSchema: {
+              type: "ARRAY",
+              items: {
+                type: "OBJECT",
+                properties: {
+                  "name": { "type": "STRING" },
+                  "gpa": { "type": "NUMBER" },
+                  "credits": { "type": "NUMBER" },
+                  "endDate": { "type": "STRING" }
+                }
               }
             }
           }
-        }
-      };
+        };
 
-      const apiKey = "AIzaSyBB476jafxuZ0LbQaboaiEoKpB0U4bK0Co";
-      const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
+        const apiKey = "AIzaSyBB476jafxuZ0LbQaboaiEoKpB0U4bK0Co";
+        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
 
-      const response = await fetch(apiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-      if (!response.ok) throw new Error(`API call failed with status: ${response.status}`);
+        const response = await fetch(apiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+        if (!response.ok) throw new Error(`API call failed with status: ${response.status}`);
 
-      const result = await response.json();
-      const jsonString = result?.candidates?.[0]?.content?.parts?.[0]?.text;
-      if (!jsonString) throw new Error("No JSON returned by model.");
+        const result = await response.json();
+        const jsonString = result?.candidates?.[0]?.content?.parts?.[0]?.text;
+        if (!jsonString) throw new Error("No JSON returned by model.");
 
-      let terms = JSON.parse(jsonString);
-      if (!Array.isArray(terms)) throw new Error("Model output was not an array.");
+        let terms = JSON.parse(jsonString);
+        if (!Array.isArray(terms)) throw new Error("Model output was not an array.");
 
-      // Filter to ~past 12 months when endDate is available
-      const now = new Date();
-      const cutoff = new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000);
-      terms = terms.filter(t => {
-        if (t?.endDate) {
-          const d = new Date(t.endDate);
-          return !isNaN(d) ? d >= cutoff : true;
-        }
-        return true;
-      });
-
-      if (terms.length === 0) {
-        showMessage("No Recent Terms", "Couldn’t find trimester/semester summaries from the last 12 months. You can still add them manually.");
-      }
-
-      terms.forEach(t => {
-        const name = t?.name || 'Trimester/Semester';
-        const gpa = (typeof t?.gpa === 'number' ? t.gpa.toFixed(2) : '');
-        const credits = (typeof t?.credits === 'number' ? t.credits : '');
-        createSemesterRow(name, gpa, credits);
-      });
-
-      extractTriStatus.textContent = terms.length ? `Added ${terms.length} term(s).` : 'No terms added.';
-    } catch (err) {
-      console.error(err);
-      showMessage("Extraction Failed", "We couldn’t extract trimester summaries. Try pasting the transcript sections that include term GPA and total credits/hours.");
-      extractTriStatus.textContent = '';
-    } finally {
-      extractTriBtn.disabled = false;
-    }
-  });
-
-  // Calculations (fixed to skip empty past-semester rows)
-  function performCalculations() {
-    let prevTotalGpXCh = 0;
-    let prevTotalCredits = 0;
-
-    const semesterRows = document.querySelectorAll('.semester-row');
-    for (const row of semesterRows) {
-      const gpaStr = row.querySelector('.sem-gpa').value.trim();
-      const creditsStr = row.querySelector('.sem-credits').value.trim();
-
-      // Skip rows that are completely empty
-      if (gpaStr === '' && creditsStr === '') continue;
-
-      const gpa = parseFloat(gpaStr);
-      const credits = parseFloat(creditsStr);
-
-      // If partially filled or invalid, error
-      if (isNaN(gpa) || isNaN(credits) || credits < 0) {
-        return { error: "Please ensure all past semester rows are either fully empty or have valid GPA and Credits (Credits ≥ 0)." };
-      }
-
-      if (credits === 0) continue; // credit 0 rows have no effect
-      prevTotalGpXCh += gpa * credits;
-      prevTotalCredits += credits;
-    }
-
-    let semTotalGpXCh = 0;
-    let semTotalCredits = 0;
-    let highestCreditCourse = { name: null, credits: 0 };
-
-    const courseRows = document.querySelectorAll('.course-row');
-    if (courseRows.length === 0) {
-      return { error: "Please add at least one current course." };
-    }
-
-    for (const row of courseRows) {
-      const creditHoursInput = row.querySelector('.credit-hours');
-      const gradeSelect = row.querySelector('.grade-input');
-      const courseNameInput = row.querySelector('.course-name');
-
-      const creditHours = parseFloat(creditHoursInput.value);
-      const grade = gradeSelect.value;
-      const courseName = courseNameInput.value || "This Course";
-
-      if (creditHours === 0) continue;
-      if (isNaN(creditHours) || creditHours < 0 || !grade) {
-        return { error: "Please enter a valid number for credit hours (≥ 0) and select a grade for each course." };
-      }
-
-      const gp = gradePoints[grade];
-      semTotalGpXCh += gp * creditHours;
-      semTotalCredits += creditHours;
-
-      if (creditHours > highestCreditCourse.credits) {
-        highestCreditCourse.credits = creditHours;
-        highestCreditCourse.name = courseName;
-      }
-    }
-
-    if (semTotalCredits === 0) {
-      return { error: "All current courses have 0 credits. Add at least one course with credits to calculate." };
-    }
-
-    const semGpa = semTotalGpXCh / semTotalCredits;
-    const cumulativeGpXCh = prevTotalGpXCh + semTotalGpXCh;
-    const cumulativeCredits = prevTotalCredits + semTotalCredits;
-    const newCgpa = cumulativeGpXCh / cumulativeCredits;
-
-    return { semGpa, newCgpa, prevTotalCredits, prevTotalGpXCh, semTotalCredits, highestCreditCourse };
-  }
-
-  calculateBtn.addEventListener('click', () => {
-    const result = performCalculations();
-    if (result.error) { showMessage("Input Error", result.error); return; }
-
-    semGpaResult.textContent = result.semGpa.toFixed(2);
-    cgpaResult.textContent = result.newCgpa.toFixed(2);
-
-    const targetCgpa = parseFloat(targetCgpaInput.value);
-    if (!isNaN(targetCgpa)) {
-      if (result.prevTotalCredits === 0) {
-        requiredGpaResult.textContent = 'N/A';
-        insightsText.textContent = "To set a target, enter at least one past semester. With no past credits, your target CGPA equals this semester’s GPA.";
-      } else {
-        const requiredTotalGpXCh = targetCgpa * (result.prevTotalCredits + result.semTotalCredits);
-        const requiredSemGpXCh = requiredTotalGpXCh - result.prevTotalGpXCh;
-        const requiredGpa = requiredSemGpXCh / result.semTotalCredits;
-
-        if (requiredGpa > 4.0 || requiredGpa < 0) {
-          if (result.newCgpa >= targetCgpa) {
-            requiredGpaResult.textContent = 'Achieved!';
-            insightsText.textContent = `🎉 You already meet or exceed your target CGPA of ${targetCgpa.toFixed(2)}. Keep prioritizing high-credit courses like '${result.highestCreditCourse.name}'.`;
-          } else {
-            requiredGpaResult.textContent = 'Impossible';
-            insightsText.textContent = `Given current credits, it’s not mathematically possible to reach a ${targetCgpa.toFixed(2)} target this term. Still, maximize gains in '${result.highestCreditCourse.name}'.`;
+        // Filter to ~past 12 months when endDate is available
+        const now = new Date();
+        const cutoff = new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000);
+        terms = terms.filter(t => {
+          if (t?.endDate) {
+            const d = new Date(t.endDate);
+            return !isNaN(d) ? d >= cutoff : true;
           }
-        } else {
-          requiredGpaResult.textContent = requiredGpa.toFixed(2);
-          insightsText.textContent = `To reach a ${targetCgpa.toFixed(2)} CGPA, aim for at least ${requiredGpa.toFixed(2)} this semester. Focus on '${result.highestCreditCourse.name}' (highest credits).`;
+          return true;
+        });
+
+        if (terms.length === 0) {
+          showMessage("No Recent Terms", "Couldn’t find trimester/semester summaries from the last 12 months. You can still add them manually.");
+        }
+
+        terms.forEach(t => {
+          const name = t?.name || 'Trimester/Semester';
+          const gpa = (typeof t?.gpa === 'number' ? t.gpa.toFixed(2) : '');
+          const credits = (typeof t?.credits === 'number' ? t.credits : '');
+          createSemesterRow(name, gpa, credits);
+        });
+
+        extractTriStatus.textContent = terms.length ? `Added ${terms.length} term(s).` : 'No terms added.';
+      } catch (err) {
+        console.error(err);
+        showMessage("Extraction Failed", "We couldn’t extract trimester summaries. Try pasting the transcript sections that include term GPA and total credits/hours.");
+        extractTriStatus.textContent = '';
+      } finally {
+        extractTriBtn.disabled = false;
+      }
+    });
+
+    // Calculations (unchanged from your fixed version)
+    function performCalculations() {
+      let prevTotalGpXCh = 0;
+      let prevTotalCredits = 0;
+
+      const semesterRows = document.querySelectorAll('.semester-row');
+      for (const row of semesterRows) {
+        const gpaStr = row.querySelector('.sem-gpa').value.trim();
+        const creditsStr = row.querySelector('.sem-credits').value.trim();
+
+        if (gpaStr === '' && creditsStr === '') continue;
+
+        const gpa = parseFloat(gpaStr);
+        const credits = parseFloat(creditsStr);
+
+        if (isNaN(gpa) || isNaN(credits) || credits < 0) {
+          return { error: "Please ensure all past semester rows are either fully empty or have valid GPA and Credits (Credits ≥ 0)." };
+        }
+
+        if (credits === 0) continue;
+        prevTotalGpXCh += gpa * credits;
+        prevTotalCredits += credits;
+      }
+
+      let semTotalGpXCh = 0;
+      let semTotalCredits = 0;
+      let highestCreditCourse = { name: null, credits: 0 };
+
+      const courseRows = document.querySelectorAll('.course-row');
+      if (courseRows.length === 0) {
+        return { error: "Please add at least one current course." };
+      }
+
+      for (const row of courseRows) {
+        const creditHoursInput = row.querySelector('.credit-hours');
+        const gradeSelect = row.querySelector('.grade-input');
+        const courseNameInput = row.querySelector('.course-name');
+
+        const creditHours = parseFloat(creditHoursInput.value);
+        const grade = gradeSelect.value;
+        const courseName = courseNameInput.value || "This Course";
+
+        if (creditHours === 0) continue;
+        if (isNaN(creditHours) || creditHours < 0 || !grade) {
+          return { error: "Please enter a valid number for credit hours (≥ 0) and select a grade for each course." };
+        }
+
+        const gp = {
+          'A+': 4.0, 'A': 4.0, 'A-': 3.7, 'B+': 3.3, 'B': 3.0, 'B-': 2.7,
+          'C+': 2.3, 'C': 2.0, 'C-': 1.7, 'D+': 1.3, 'D': 1.0, 'F': 0.0
+        }[grade];
+
+        semTotalGpXCh += gp * creditHours;
+        semTotalCredits += creditHours;
+
+        if (creditHours > highestCreditCourse.credits) {
+          highestCreditCourse.credits = creditHours;
+          highestCreditCourse.name = courseName;
         }
       }
-    } else {
-      requiredGpaResult.textContent = '--';
-      if (result.highestCreditCourse.name) {
-        insightsText.textContent = `Biggest impact: '${result.highestCreditCourse.name}' (${result.highestCreditCourse.credits} credits).`;
-      } else {
-        insightsText.textContent = `To maximize your CGPA, ensure you do well in all your courses. Every grade counts!`;
+
+      if (semTotalCredits === 0) {
+        return { error: "All current courses have 0 credits. Add at least one course with credits to calculate." };
       }
+
+      const semGpa = semTotalGpXCh / semTotalCredits;
+      const cumulativeGpXCh = prevTotalGpXCh + semTotalGpXCh;
+      const cumulativeCredits = prevTotalCredits + semTotalCredits;
+      const newCgpa = cumulativeGpXCh / cumulativeCredits;
+
+      return { semGpa, newCgpa, prevTotalCredits, prevTotalGpXCh, semTotalCredits, highestCreditCourse };
     }
 
-    if (result.prevTotalCredits > 0) {
-      projectionsSection.classList.remove('hidden');
-      const futureCredits = result.semTotalCredits;
-      const calc = (g) => {
-        const futureGpXCh = g * futureCredits;
-        const totalGpXCh = result.prevTotalGpXCh + futureGpXCh;
-        const totalCredits = result.prevTotalCredits + futureCredits;
-        return (totalGpXCh / totalCredits).toFixed(2);
-      };
-      proj25Result.textContent = calc(2.5);
-      proj30Result.textContent = calc(3.0);
-      proj35Result.textContent = calc(3.5);
-      proj40Result.textContent = calc(4.0);
-    } else {
-      projectionsSection.classList.add('hidden');
-    }
+    calculateBtn.addEventListener('click', () => {
+      const result = performCalculations();
+      if (result.error) { showMessage("Input Error", result.error); return; }
 
-    resultsSection.classList.remove('hidden');
-    resultsSection.scrollIntoView({ behavior: 'smooth' });
-  });
+      semGpaResult.textContent = result.semGpa.toFixed(2);
+      cgpaResult.textContent = result.newCgpa.toFixed(2);
 
-  whatIfBtn.addEventListener('click', () => {
-    const result = performCalculations();
-    if (result.error) { showMessage("Input Error", result.error); return; }
-    whatIfSemGpa.textContent = result.semGpa.toFixed(2);
-    whatIfCgpa.textContent = result.newCgpa.toFixed(2);
-    whatIfResults.classList.remove('hidden');
-    whatIfResults.scrollIntoView({ behavior: 'smooth' });
-  });
-</script>
+      const targetCgpa = parseFloat(targetCgpaInput.value);
+      if (!isNaN(targetCgpa)) {
+        if (result.prevTotalCredits === 0) {
+          requiredGpaResult.textContent = 'N/A';
+          insightsText.textContent = "To set a target, enter at least one past semester. With no past credits, your target CGPA equals this semester’s GPA.";
+        } else {
+          const requiredTotalGpXCh = targetCgpa * (result.prevTotalCredits + result.semTotalCredits);
+          const requiredSemGpXCh = requiredTotalGpXCh - result.prevTotalGpXCh;
+          const requiredGpa = requiredSemGpXCh / result.semTotalCredits;
+
+          if (requiredGpa > 4.0 || requiredGpa < 0) {
+            if (result.newCgpa >= targetCgpa) {
+              requiredGpaResult.textContent = 'Achieved!';
+              insightsText.textContent = `🎉 You already meet or exceed your target CGPA of ${targetCgpa.toFixed(2)}. Keep prioritizing high-credit courses like '${result.highestCreditCourse.name}'.`;
+            } else {
+              requiredGpaResult.textContent = 'Impossible';
+              insightsText.textContent = `Given current credits, it’s not mathematically possible to reach a ${targetCgpa.toFixed(2)} target this term. Still, maximize gains in '${result.highestCreditCourse.name}'.`;
+            }
+          } else {
+            requiredGpaResult.textContent = requiredGpa.toFixed(2);
+            insightsText.textContent = `To reach a ${targetCgpa.toFixed(2)} CGPA, aim for at least ${requiredGpa.toFixed(2)} this semester. Focus on '${result.highestCreditCourse.name}' (highest credits).`;
+          }
+        }
+      } else {
+        requiredGpaResult.textContent = '--';
+        if (result.highestCreditCourse.name) {
+          insightsText.textContent = `Biggest impact: '${result.highestCreditCourse.name}' (${result.highestCreditCourse.credits} credits).`;
+        } else {
+          insightsText.textContent = `To maximize your CGPA, ensure you do well in all your courses. Every grade counts!`;
+        }
+      }
+
+      if (result.prevTotalCredits > 0) {
+        projectionsSection.classList.remove('hidden');
+        const futureCredits = result.semTotalCredits;
+        const calc = (g) => {
+          const futureGpXCh = g * futureCredits;
+          const totalGpXCh = result.prevTotalGpXCh + futureGpXCh;
+          const totalCredits = result.prevTotalCredits + futureCredits;
+          return (totalGpXCh / totalCredits).toFixed(2);
+        };
+        proj25Result.textContent = calc(2.5);
+        proj30Result.textContent = calc(3.0);
+        proj35Result.textContent = calc(3.5);
+        proj40Result.textContent = calc(4.0);
+      } else {
+        projectionsSection.classList.add('hidden');
+      }
+
+      resultsSection.classList.remove('hidden');
+      resultsSection.scrollIntoView({ behavior: 'smooth' });
+    });
+
+    whatIfBtn.addEventListener('click', () => {
+      const result = performCalculations();
+      if (result.error) { showMessage("Input Error", result.error); return; }
+      whatIfSemGpa.textContent = result.semGpa.toFixed(2);
+      whatIfCgpa.textContent = result.newCgpa.toFixed(2);
+      whatIfResults.classList.remove('hidden');
+      whatIfResults.scrollIntoView({ behavior: 'smooth' });
+    });
+  </script>
 </body>
 </html>
