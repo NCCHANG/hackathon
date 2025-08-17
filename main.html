@@ -116,6 +116,11 @@
           class="mt-6 w-full py-3 px-4 bg-gray-200 text-gray-700 font-semibold rounded-lg shadow-sm hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-400 transition duration-150">
           + Add A Past Semester
         </button>
+        <!-- New Calculate CGPA Button -->
+        <button id="calc-prev-cgpa-btn"
+          class="mt-2 w-full py-3 px-4 bg-blue-500 text-white font-semibold rounded-lg shadow-sm hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-400 transition duration-150">
+          Calculate CGPA
+        </button>
       </div>
 
       <!-- AI-Powered Data Entry Section -->
@@ -334,6 +339,8 @@
 
     const pastSemestersContainer = document.getElementById('past-semesters-container');
     const addSemesterBtn = document.getElementById('add-semester-btn');
+    // Add reference for new button
+    const calcPrevCgpaBtn = document.getElementById('calc-prev-cgpa-btn');
     const targetCgpaInput = document.getElementById('target-cgpa');
     const coursesContainer = document.getElementById('courses-container');
     const addCourseBtn = document.getElementById('add-course-btn');
@@ -874,6 +881,26 @@
       whatIfCgpa.textContent = result.newCgpa.toFixed(2);
       whatIfResults.classList.remove('hidden');
       whatIfResults.scrollIntoView({ behavior: 'smooth' });
+    });
+
+    // Calculate CGPA for past semesters only
+    calcPrevCgpaBtn.addEventListener('click', () => {
+      let totalGpXCh = 0;
+      let totalCredits = 0;
+      const semesterRows = document.querySelectorAll('.semester-row');
+      for (const row of semesterRows) {
+        const gpa = parseFloat(row.querySelector('.sem-gpa').value);
+        const credits = parseFloat(row.querySelector('.sem-credits').value);
+        if (isNaN(gpa) || isNaN(credits) || credits <= 0) continue;
+        totalGpXCh += gpa * credits;
+        totalCredits += credits;
+      }
+      if (totalCredits === 0) {
+        showMessage("CGPA Calculation", "Please enter valid GPA and Credits for at least one past semester.");
+        return;
+      }
+      const cgpa = totalGpXCh / totalCredits;
+      showMessage("Past Semesters CGPA", `Your CGPA for all past semesters is ${cgpa.toFixed(2)}.`);
     });
   </script>
 </body>
