@@ -99,7 +99,20 @@ function createCourseRow(courseName = '', creditHours = '', grade = '') {
     <div class="col-span-2 sm:col-span-1">
       <select class="grade-input w-full p-3 border border-gray-300 rounded-lg">
         <option value="" disabled ${grade ? '' : 'selected'}>Select Grade</option>
-        ${['A+','A','A-','B+','B','B-','C+','C','C-','D+','D','F']
+        ${['A+(90-100)',
+  'A(80-89)',
+  'A-(79)', 'A-(78)', 'A-(77)', 'A-(76)', 'A-(75)',
+  'B+(74)', 'B+(73)', 'B+(72)', 'B+(71)', 'B+(70)',
+  'B(69)', 'B(68)', 'B(67)', 'B(66)', 'B(65)',
+  'B-(64)', 'B-(63)', 'B-(62)', 'B-(61)', 'B-(60)',
+  'C+(59)', 'C+(58)', 'C+(57)', 'C+(56)', 'C+(55)',
+  'C(54)', 'C(53)', 'C(52)', 'C(51)', 'C(50)',
+  'C-(47-49)',
+  'D+(44-46)',
+  'D(40-43)',
+  'F(0-39)',
+  'PS(40-100)',
+  'FL(0-39)']
           .map(g => `<option value="${g}" ${g===grade ? 'selected':''}>${g}</option>`).join('')}
       </select>
     </div>

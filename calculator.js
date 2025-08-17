@@ -52,6 +52,7 @@ export function performCalculationsFromDOM() {
     const courseName = (row.querySelector('.course-name')?.value || "This Course").trim();
     if (!isFinite(creditHours) || creditHours < 0) return;
     if (creditHours === 0) return;
+    if(creditHours === 2) {return;} // Skip 2-credit courses
     if (!grade) throw new Error("Missing grade for a course.");
     const gp = simpleLetterToPoint(grade);
     if (!isFinite(gp)) throw new Error("Invalid grade mapping.");
@@ -83,11 +84,20 @@ export function performCalculationsFromDOM() {
 export function simpleLetterToPoint(letter) {
   // default classic scale; adjust if you want to use your fine-grained map
   const map = {
-    'A+': 4.0, 'A': 4.0, 'A-': 3.7,
-    'B+': 3.3, 'B': 3.0, 'B-': 2.7,
-    'C+': 2.3, 'C': 2.0, 'C-': 1.7,
-    'D+': 1.3, 'D': 1.0, 'F': 0.0,
-    'PS': 0.0, 'FL': 0.0
+    'A+(90-100)': 4.00,
+  'A(80-89)': 4.00,
+  'A-(79)': 3.93, 'A-(78)': 3.87, 'A-(77)': 3.80, 'A-(76)': 3.73, 'A-(75)': 3.67,
+  'B+(74)': 3.60, 'B+(73)': 3.53, 'B+(72)': 3.47, 'B+(71)': 3.40, 'B+(70)': 3.33,
+  'B(69)': 3.27, 'B(68)': 3.20, 'B(67)': 3.13, 'B(66)': 3.07, 'B(65)': 3.00,
+  'B-(64)': 2.93, 'B-(63)': 2.87, 'B-(62)': 2.80, 'B-(61)': 2.73, 'B-(60)': 2.67,
+  'C+(59)': 2.59, 'C+(58)': 2.53, 'C+(57)': 2.46, 'C+(56)': 2.40, 'C+(55)': 2.33,
+  'C(54)': 2.26, 'C(53)': 2.20, 'C(52)': 2.13, 'C(51)': 2.07, 'C(50)': 2.00,
+  'C-(47-49)': 1.67,
+  'D+(44-46)': 1.33,
+  'D(40-43)': 1.00,
+  'F(0-39)': 0.00,
+  'PS(40-100)': null,
+  'FL(0-39)': null
   };
   return map[(letter || '').toUpperCase()];
 }
