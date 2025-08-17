@@ -158,21 +158,53 @@ function createCourseRow(courseName = '', creditHours = '', grade = '') {
       <input type="number" placeholder="Credits" value="\${creditHours}" step="1" class="credit-hours w-full p-3 border border-gray-300 rounded-lg">
     </div>
     <div class="col-span-2 sm:col-span-1">
-      <select class="grade-input w-full p-3 border border-gray-300 rounded-lg">
-        <option value="" disabled ${grade ? '' : 'selected'}>Select Grade</option>
-        <option value="A+" ${grade==="A+"?'selected':''}>A+</option>
-        <option value="A" ${grade==="A"?'selected':''}>A</option>
-        <option value="A-" ${grade==="A-"?'selected':''}>A-</option>
-        <option value="B+" ${grade==="B+"?'selected':''}>B+</option>
-        <option value="B" ${grade==="B"?'selected':''}>B</option>
-        <option value="B-" ${grade==="B-"?'selected':''}>B-</option>
-        <option value="C+" ${grade==="C+"?'selected':''}>C+</option>
-        <option value="C" ${grade==="C"?'selected':''}>C</option>
-        <option value="C-" ${grade==="C-"?'selected':''}>C-</option>
-        <option value="D+" ${grade==="D+"?'selected':''}>D+</option>
-        <option value="D" ${grade==="D"?'selected':''}>D</option>
-        <option value="F" ${grade==="F"?'selected':''}>F</option>
-      </select>
+      <select class="grade-input w-full p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 transition duration-150">
+                <option value="" disabled selected>Select Grade</option>
+
+                <option value="A+(90-100)">A+ (90-100)</option>
+                <option value="A(80-89)">A (80-89)</option>
+                <option value="A-(79)">A- (79)</option>
+                <option value="A-(78)">A- (78)</option>
+                <option value="A-(77)">A- (77)</option>
+                <option value="A-(76)">A- (76)</option>
+                <option value="A-(75)">A- (75)</option>
+
+                <option value="B+(74)">B+ (74)</option>
+                <option value="B+(73)">B+ (73)</option>
+                <option value="B+(72)">B+ (72)</option>
+                <option value="B+(71)">B+ (71)</option>
+                <option value="B+(70)">B+ (70)</option>
+
+                <option value="B(69)">B (69)</option>
+                <option value="B(68)">B (68)</option>
+                <option value="B(67)">B (67)</option>
+                <option value="B(66)">B (66)</option>
+                <option value="B(65)">B (65)</option>
+
+                <option value="B-(64)">B- (64)</option>
+                <option value="B-(63)">B- (63)</option>
+                <option value="B-(62)">B- (62)</option>
+                <option value="B-(61)">B- (61)</option>
+                <option value="B-(60)">B- (60)</option>
+                <option value="C+(59)">C+ (59)</option>
+                <option value="C+(58)">C+ (58)</option>
+                <option value="C+(57)">C+ (57)</option>
+                <option value="C+(56)">C+ (56)</option>
+                <option value="C+(55)">C+ (55)</option>
+
+                <option value="C(54)">C (54)</option>
+                <option value="C(53)">C (53)</option>
+                <option value="C(52)">C (52)</option>
+                <option value="C(51)">C (51)</option>
+                <option value="C(50)">C (50)</option>
+
+                <option value="C-(47-49)">C- (47-49)</option>
+                <option value="D+(44-46)">D+ (44-46)</option>
+                <option value="D(40-43)">D (40-43)</option>
+                <option value="F(0-39)">F (0-39)</option>
+                <option value="PS(40-100)">PS (40-100)</option>
+                <option value="FL(0-39)">FL (0-39)</option>
+            </select>
     </div>
     <div class="col-span-1 sm:col-span-1 flex justify-end">
       <button class="remove-course-btn p-2 text-gray-400 hover:text-red-500 transition-colors">
